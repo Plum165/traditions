@@ -7,7 +7,7 @@ A mobile-first digital cultural archive dedicated to documenting and preserving 
 - **First Published Game**: **Sevens** (`/games/sevens`), documenting the 54-card deck (52 cards + 2 Jokers), 7-card and 11-card starting hand variations, matching sets, consecutive runs, Joker replacement rules, and open questions requiring community confirmation.
 - **Interactive Sevens Experience**:
   - **Learn to Play** (`/games/sevens/learn`) — 7-lesson interactive tutorial with card examples, instant quiz feedback, and live set-validation practice.
-  - **Play Sevens** (`/games/sevens/play`) — Playable 2–4 player Sevens supporting 7-card and 11-card hands, Pass and Play with turn-privacy screens, deterministic rule-based bots, and configurable unresolved house rules.
+  - **Play Sevens** (`/games/sevens/play`) — Mobile-first playable 2–4 player Sevens supporting Draw Pile or top Discard Pile drawing, 7-card and 11-card hands, Pass and Play with turn-privacy screens, deterministic bots, persistent on-table victory standings, and configurable unresolved house rules.
 - **Core Routes**:
   - `/` – Archive homepage and introduction
   - `/games` – Searchable, category-filtered Games Library

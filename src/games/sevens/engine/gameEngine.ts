@@ -1,9 +1,11 @@
 import { createDeck, dealHands, formatCardLabel, shuffleDeck, sortHand } from './deck';
 import type {
+  DrawSource,
   GameSetupConfig,
   GameState,
   MoveResult,
   Player,
+  PlayerStanding,
   PlayingCard,
   PublicTableView,
   SevensRulesConfig,
@@ -19,7 +21,7 @@ import {
 export const DEFAULT_SEVENS_RULES: SevensRulesConfig = {
   allowDiscardJoker: false,
   allowImmediateJokerReuse: true,
-  allowDiscardPickupTop: false,
+  allowDiscardPickupTop: true,
   requireFinalDiscard: false,
   allowExtendJokerSets: true,
 };
@@ -49,6 +51,57 @@ function buildPlayers(
 
 function appendLog(log: readonly string[], entry: string): string[] {
   return [entry, ...log].slice(0, 30);
+}
+
+function computeStandings(
+  players: readonly Player[],
+  winnerId: string
+): PlayerStanding[] {
+  const sorted = [...players].sort((a, b) => {
+    if (a.id === winnerId) return -1;
+    if (b.id === winnerId) return 1;
+    return a.hand.length - b.hand.length;
+  });
+
+  return sorted.map((player, index) => ({
+    rank: index + 1,
+    playerId: player.id,
+    name: player.name,
+    type: player.type,
+    cardsRemaining: player.hand.length,
+    isWinner: player.id === winnerId,
+  }));
+}
+
+/**
+ * Centralized victory detection used identically for both human and bot turns.
+ * Never overrides an already completed game or declares a winner twice.
+ */
+export function detectAndApplyVictory(state: GameState): GameState {
+  if (state.status === 'GAME_OVER' || state.winnerId !== null) {
+    return state;
+  }
+
+  const winningPlayer = state.players.find((player) => player.hand.length === 0);
+  if (!winningPlayer) {
+    return state;
+  }
+
+  const summary =
+    winningPlayer.type === 'bot'
+      ? `Game Over! ${winningPlayer.name} (Bot) has won!`
+      : `Congratulations! ${winningPlayer.name} won Sevens!`;
+
+  return {
+    ...state,
+    status: 'GAME_OVER',
+    winnerId: winningPlayer.id,
+    winnerType: winningPlayer.type,
+    standings: computeStandings(state.players, winningPlayer.id),
+    awaitingPassConfirmation: false,
+    lastActionSummary: summary,
+    actionLog: appendLog(state.actionLog, summary),
+  };
 }
 
 export function createGame(
@@ -92,10 +145,14 @@ export function createGame(
     discardPile: initialDiscard,
     tableSets: [],
     turnNumber: 1,
+    hasDrawnThisTurn: false,
+    lastDrawSource: null,
     hasCreatedNewSetThisTurn: false,
     retrievedJokerIdsThisTurn: [],
     awaitingPassConfirmation,
     winnerId: null,
+    winnerType: null,
+    standings: [],
     lastActionSummary: summary,
     actionLog: [summary],
   };
@@ -142,57 +199,32 @@ function replenishDrawPileIfEmpty(
   };
 }
 
-export function drawCard(
-  state: GameState,
-  source: 'draw-pile' | 'discard-pile' = 'draw-pile',
-  rng: () => number = Math.random
-): MoveResult {
+function validateCanDraw(state: GameState): string | null {
   if (state.status !== 'PLAYING') {
-    return { ok: false, error: 'Game is already over.', state };
+    return 'Game is already over.';
   }
   if (state.awaitingPassConfirmation) {
-    return { ok: false, error: 'Confirm device pass before drawing a card.', state };
+    return 'Confirm device pass before drawing a card.';
   }
-  if (state.phase !== 'DRAW') {
-    return { ok: false, error: 'You have already drawn a card this turn.', state };
+  if (state.phase !== 'DRAW' || state.hasDrawnThisTurn) {
+    return 'You have already drawn a card this turn.';
+  }
+  return null;
+}
+
+/**
+ * Draws the top card from the face-down draw pile (recycling lower discard cards if needed).
+ */
+export function drawFromDeck(
+  state: GameState,
+  rng: () => number = Math.random
+): MoveResult {
+  const guardError = validateCanDraw(state);
+  if (guardError) {
+    return { ok: false, error: guardError, state };
   }
 
   const activePlayer = state.players[state.currentPlayerIndex];
-
-  if (source === 'discard-pile') {
-    if (!state.rules.allowDiscardPickupTop) {
-      return {
-        ok: false,
-        error: 'Current table rules require drawing from the draw pile.',
-        state,
-      };
-    }
-    if (state.discardPile.length === 0) {
-      return { ok: false, error: 'The discard pile is empty.', state };
-    }
-
-    const drawn = state.discardPile[state.discardPile.length - 1];
-    const nextDiscard = state.discardPile.slice(0, -1);
-    const updatedPlayers = state.players.map((p, idx) =>
-      idx === state.currentPlayerIndex
-        ? { ...p, hand: sortHand([...p.hand, drawn]) }
-        : p
-    );
-
-    const summary = `${activePlayer.name} picked up ${formatCardLabel(drawn)} from the discard pile.`;
-    return {
-      ok: true,
-      state: {
-        ...state,
-        players: updatedPlayers,
-        discardPile: nextDiscard,
-        phase: 'PLAY',
-        lastActionSummary: summary,
-        actionLog: appendLog(state.actionLog, summary),
-      },
-    };
-  }
-
   const { drawPile, discardPile } = replenishDrawPileIfEmpty(
     state.drawPile,
     state.discardPile,
@@ -200,15 +232,10 @@ export function drawCard(
   );
 
   if (drawPile.length === 0) {
-    const summary = `${activePlayer.name} could not draw because no cards remain in the draw pile.`;
     return {
-      ok: true,
-      state: {
-        ...state,
-        phase: 'PLAY',
-        lastActionSummary: summary,
-        actionLog: appendLog(state.actionLog, summary),
-      },
+      ok: false,
+      error: 'No cards remain in the draw pile.',
+      state,
     };
   }
 
@@ -222,8 +249,8 @@ export function drawCard(
 
   const summary =
     activePlayer.type === 'human' && state.mode === 'pass-and-play'
-      ? `${activePlayer.name} drew a card.`
-      : `${activePlayer.name} drew a card from the deck.`;
+      ? `${activePlayer.name} drew a card from the draw pile.`
+      : `${activePlayer.name} drew a card from the draw pile.`;
 
   return {
     ok: true,
@@ -233,10 +260,74 @@ export function drawCard(
       drawPile: nextDrawPile,
       discardPile,
       phase: 'PLAY',
+      hasDrawnThisTurn: true,
+      lastDrawSource: 'draw-pile',
       lastActionSummary: summary,
       actionLog: appendLog(state.actionLog, summary),
     },
   };
+}
+
+/**
+ * Draws ONLY the top card from the face-up discard pile.
+ */
+export function drawFromDiscard(state: GameState): MoveResult {
+  const guardError = validateCanDraw(state);
+  if (guardError) {
+    return { ok: false, error: guardError, state };
+  }
+
+  if (!state.rules.allowDiscardPickupTop) {
+    return {
+      ok: false,
+      error: 'Current table rules require drawing from the draw pile.',
+      state,
+    };
+  }
+
+  if (state.discardPile.length === 0) {
+    return {
+      ok: false,
+      error: 'The discard pile is empty.',
+      state,
+    };
+  }
+
+  const activePlayer = state.players[state.currentPlayerIndex];
+  const drawn = state.discardPile[state.discardPile.length - 1];
+  const nextDiscard = state.discardPile.slice(0, -1);
+  const updatedPlayers = state.players.map((p, idx) =>
+    idx === state.currentPlayerIndex
+      ? { ...p, hand: sortHand([...p.hand, drawn]) }
+      : p
+  );
+
+  const summary = `${activePlayer.name} took ${formatCardLabel(drawn)} from the discard pile.`;
+
+  return {
+    ok: true,
+    state: {
+      ...state,
+      players: updatedPlayers,
+      discardPile: nextDiscard,
+      phase: 'PLAY',
+      hasDrawnThisTurn: true,
+      lastDrawSource: 'discard-pile',
+      lastActionSummary: summary,
+      actionLog: appendLog(state.actionLog, summary),
+    },
+  };
+}
+
+export function drawCard(
+  state: GameState,
+  source: DrawSource = 'draw-pile',
+  rng: () => number = Math.random
+): MoveResult {
+  if (source === 'discard-pile') {
+    return drawFromDiscard(state);
+  }
+  return drawFromDeck(state, rng);
 }
 
 function checkRetrievedJokerRestriction(
@@ -252,23 +343,6 @@ function checkRetrievedJokerRestriction(
     return 'Current house rules prevent reusing a retrieved Joker during the same turn.';
   }
   return null;
-}
-
-function applyWinIfHandEmpty(state: GameState, playerIndex: number): GameState {
-  const player = state.players[playerIndex];
-  if (player.hand.length > 0) {
-    return state;
-  }
-
-  const summary = `${player.name} cleared all cards and won the game!`;
-  return {
-    ...state,
-    status: 'GAME_OVER',
-    winnerId: player.id,
-    awaitingPassConfirmation: false,
-    lastActionSummary: summary,
-    actionLog: appendLog(state.actionLog, summary),
-  };
 }
 
 export function playNewSet(state: GameState, cardIds: readonly string[]): MoveResult {
@@ -316,7 +390,8 @@ export function playNewSet(state: GameState, cardIds: readonly string[]): MoveRe
   ) {
     return {
       ok: false,
-      error: 'Current house rules require keeping at least 1 card to discard at the end of your turn.',
+      error:
+        'Current house rules require keeping at least 1 card to discard at the end of your turn.',
       state,
     };
   }
@@ -346,17 +421,14 @@ export function playNewSet(state: GameState, cardIds: readonly string[]): MoveRe
     validation.setType === 'matching' ? 'matching set' : 'consecutive run'
   }: ${label}.`;
 
-  const nextState = applyWinIfHandEmpty(
-    {
-      ...state,
-      players: updatedPlayers,
-      tableSets: [...state.tableSets, newSet],
-      hasCreatedNewSetThisTurn: true,
-      lastActionSummary: summary,
-      actionLog: appendLog(state.actionLog, summary),
-    },
-    state.currentPlayerIndex
-  );
+  const nextState = detectAndApplyVictory({
+    ...state,
+    players: updatedPlayers,
+    tableSets: [...state.tableSets, newSet],
+    hasCreatedNewSetThisTurn: true,
+    lastActionSummary: summary,
+    actionLog: appendLog(state.actionLog, summary),
+  });
 
   return { ok: true, state: nextState };
 }
@@ -431,16 +503,13 @@ export function addCardsToSet(
     targetSet.type === 'matching' ? 'matching set' : 'run'
   }.`;
 
-  const nextState = applyWinIfHandEmpty(
-    {
-      ...state,
-      players: updatedPlayers,
-      tableSets: updatedTableSets,
-      lastActionSummary: summary,
-      actionLog: appendLog(state.actionLog, summary),
-    },
-    state.currentPlayerIndex
-  );
+  const nextState = detectAndApplyVictory({
+    ...state,
+    players: updatedPlayers,
+    tableSets: updatedTableSets,
+    lastActionSummary: summary,
+    actionLog: appendLog(state.actionLog, summary),
+  });
 
   return { ok: true, state: nextState };
 }
@@ -571,7 +640,7 @@ export function discardCard(state: GameState, cardId: string): MoveResult {
   if (nextHand.length === 0) {
     return {
       ok: true,
-      state: applyWinIfHandEmpty(stateAfterDiscard, state.currentPlayerIndex),
+      state: detectAndApplyVictory(stateAfterDiscard),
     };
   }
 
@@ -587,6 +656,8 @@ export function discardCard(state: GameState, cardId: string): MoveResult {
       currentPlayerIndex: nextPlayerIndex,
       phase: 'DRAW',
       turnNumber: state.turnNumber + 1,
+      hasDrawnThisTurn: false,
+      lastDrawSource: null,
       hasCreatedNewSetThisTurn: false,
       retrievedJokerIdsThisTurn: [],
       awaitingPassConfirmation: needsPassScreen,
@@ -604,7 +675,7 @@ export function getPublicTableView(state: GameState): PublicTableView {
     name: p.name,
     type: p.type,
     cardCount: p.hand.length,
-    isCurrentTurn: idx === state.currentPlayerIndex,
+    isCurrentTurn: state.status === 'PLAYING' && idx === state.currentPlayerIndex,
   }));
 
   const currentPlayerSummary = players[state.currentPlayerIndex];
@@ -615,10 +686,12 @@ export function getPublicTableView(state: GameState): PublicTableView {
     if (state.mode === 'pass-and-play') {
       visibleHand = [...activePlayer.hand];
     } else {
-      // In vs-bots mode, always show the human player's hand (index 0) without exposing bot hands
       const humanPlayer = state.players.find((p) => p.type === 'human');
       visibleHand = humanPlayer ? [...humanPlayer.hand] : null;
     }
+  } else if (state.status === 'GAME_OVER' && state.mode === 'vs-bots') {
+    const humanPlayer = state.players.find((p) => p.type === 'human');
+    visibleHand = humanPlayer ? [...humanPlayer.hand] : null;
   }
 
   const winner = state.winnerId
@@ -630,6 +703,8 @@ export function getPublicTableView(state: GameState): PublicTableView {
     mode: state.mode,
     phase: state.phase,
     turnNumber: state.turnNumber,
+    hasDrawnThisTurn: state.hasDrawnThisTurn,
+    lastDrawSource: state.lastDrawSource,
     hasCreatedNewSetThisTurn: state.hasCreatedNewSetThisTurn,
     awaitingPassConfirmation: state.awaitingPassConfirmation,
     currentPlayer: currentPlayerSummary,
@@ -643,6 +718,9 @@ export function getPublicTableView(state: GameState): PublicTableView {
     discardPileCount: state.discardPile.length,
     tableSets: state.tableSets,
     winner,
+    winnerType: state.winnerType,
+    standings: state.standings,
     lastActionSummary: state.lastActionSummary,
+    actionLog: state.actionLog,
   };
 }

@@ -97,7 +97,7 @@ export function SevensPlayPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
+      <section className="mx-auto max-w-6xl overflow-x-hidden px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
         {!gameState || !tableView ? (
           <SevensSetupPanel
             initialConfig={setupConfig ?? undefined}

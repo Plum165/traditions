@@ -280,7 +280,8 @@ export function SevensSetupPanel({
                     Allow drawing the top card from the discard pile
                   </strong>
                   <span className="block text-xs text-[#524943]">
-                    When on, you may draw either from the deck or take the top discard card.
+                    On by default: choose either the face-down draw pile or the top face-up
+                    discard card at the start of each turn.
                   </span>
                 </span>
               </label>

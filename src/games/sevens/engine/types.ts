@@ -38,6 +38,8 @@ export interface Player {
 
 export type TurnPhase = 'DRAW' | 'PLAY' | 'DISCARD';
 
+export type DrawSource = 'draw-pile' | 'discard-pile';
+
 export type GameMode = 'pass-and-play' | 'vs-bots';
 
 export type StartingHandSize = 7 | 11;
@@ -63,6 +65,15 @@ export interface GameSetupConfig {
   rules?: Partial<SevensRulesConfig>;
 }
 
+export interface PlayerStanding {
+  rank: number;
+  playerId: string;
+  name: string;
+  type: PlayerType;
+  cardsRemaining: number;
+  isWinner: boolean;
+}
+
 export interface GameState {
   status: 'PLAYING' | 'GAME_OVER';
   mode: GameMode;
@@ -75,10 +86,14 @@ export interface GameState {
   discardPile: PlayingCard[];
   tableSets: TableSet[];
   turnNumber: number;
+  hasDrawnThisTurn: boolean;
+  lastDrawSource: DrawSource | null;
   hasCreatedNewSetThisTurn: boolean;
   retrievedJokerIdsThisTurn: string[];
   awaitingPassConfirmation: boolean;
   winnerId: string | null;
+  winnerType: PlayerType | null;
+  standings: PlayerStanding[];
   lastActionSummary: string;
   actionLog: string[];
 }
@@ -109,6 +124,8 @@ export interface PublicTableView {
   mode: GameMode;
   phase: TurnPhase;
   turnNumber: number;
+  hasDrawnThisTurn: boolean;
+  lastDrawSource: DrawSource | null;
   hasCreatedNewSetThisTurn: boolean;
   awaitingPassConfirmation: boolean;
   currentPlayer: PublicPlayerSummary;
@@ -119,5 +136,8 @@ export interface PublicTableView {
   discardPileCount: number;
   tableSets: TableSet[];
   winner: PublicPlayerSummary | null;
+  winnerType: PlayerType | null;
+  standings: PlayerStanding[];
   lastActionSummary: string;
+  actionLog: string[];
 }

@@ -6,8 +6,11 @@ import {
   createDeck,
   createGame,
   dealHands,
+  detectAndApplyVictory,
   discardCard,
   drawCard,
+  drawFromDeck,
+  drawFromDiscard,
   executeFullBotTurn,
   getPublicTableView,
   playNewSet,
@@ -456,3 +459,166 @@ describe('Bot Strategy Priorities and Constraints', () => {
     expect(completed.currentPlayerIndex).toBe(0);
   });
 });
+
+describe('Drawing Mechanics: Draw Pile vs. Top Discard Pile', () => {
+  it('draws exactly one card from the draw pile and blocks drawing again the same turn', () => {
+    const initial = createGame(
+      { playerCount: 2, handSize: 7, mode: 'vs-bots' },
+      createDeterministicRng(10)
+    );
+    const startingDrawCount = initial.drawPile.length;
+    const startingHandCount = initial.players[0].hand.length;
+
+    const firstDraw = drawFromDeck(initial, createDeterministicRng(10));
+    expect(firstDraw.ok).toBe(true);
+    expect(firstDraw.state.phase).toBe('PLAY');
+    expect(firstDraw.state.hasDrawnThisTurn).toBe(true);
+    expect(firstDraw.state.lastDrawSource).toBe('draw-pile');
+    expect(firstDraw.state.drawPile).toHaveLength(startingDrawCount - 1);
+    expect(firstDraw.state.players[0].hand).toHaveLength(startingHandCount + 1);
+
+    // Cannot draw from deck or discard again in the same turn
+    const secondDeckDraw = drawFromDeck(firstDraw.state);
+    expect(secondDeckDraw.ok).toBe(false);
+    expect(secondDeckDraw.error).toMatch(/already drawn/i);
+
+    const secondDiscardDraw = drawFromDiscard(firstDraw.state);
+    expect(secondDiscardDraw.ok).toBe(false);
+    expect(secondDiscardDraw.error).toMatch(/already drawn/i);
+  });
+
+  it('draws only the top card of the discard pile and preserves cards underneath', () => {
+    const base = createGame(
+      { playerCount: 2, handSize: 7, mode: 'vs-bots' },
+      createDeterministicRng(22)
+    );
+    const state: GameState = {
+      ...base,
+      discardPile: [std(2, 'clubs'), std(4, 'hearts'), std(9, 'spades')],
+      phase: 'DRAW',
+      hasDrawnThisTurn: false,
+    };
+
+    const taken = drawFromDiscard(state);
+    expect(taken.ok).toBe(true);
+    expect(taken.state.phase).toBe('PLAY');
+    expect(taken.state.hasDrawnThisTurn).toBe(true);
+    expect(taken.state.lastDrawSource).toBe('discard-pile');
+    expect(taken.state.players[0].hand.some((c) => c.id === 'spades-9')).toBe(true);
+    expect(taken.state.discardPile.map((c) => c.id)).toEqual(['clubs-2', 'hearts-4']);
+  });
+
+  it('rejects drawing from empty piles cleanly without mutating state', () => {
+    const base = createGame({ playerCount: 2, handSize: 7, mode: 'vs-bots' });
+    const emptyState: GameState = {
+      ...base,
+      drawPile: [],
+      discardPile: [],
+      phase: 'DRAW',
+      hasDrawnThisTurn: false,
+    };
+
+    const emptyDiscardResult = drawFromDiscard(emptyState);
+    expect(emptyDiscardResult.ok).toBe(false);
+    expect(emptyDiscardResult.error).toMatch(/discard pile is empty/i);
+    expect(emptyDiscardResult.state).toBe(emptyState);
+
+    const emptyDeckResult = drawFromDeck(emptyState);
+    expect(emptyDeckResult.ok).toBe(false);
+    expect(emptyDeckResult.error).toMatch(/no cards remain/i);
+    expect(emptyDeckResult.state).toBe(emptyState);
+  });
+});
+
+describe('Persistent Victory Detection and Post-Game Locks', () => {
+  it('detects human victory, preserves final board state, and blocks subsequent turns', () => {
+    const base = createGame(
+      { playerCount: 2, handSize: 7, mode: 'vs-bots' },
+      createDeterministicRng(33)
+    );
+    const tableSet: TableSet = {
+      id: 'set-final',
+      type: 'matching',
+      cards: [std(7, 'diamonds'), std(7, 'hearts'), std(7, 'clubs')],
+      createdByPlayerId: 'player-1',
+      createdTurn: 3,
+    };
+    const state: GameState = {
+      ...base,
+      phase: 'PLAY',
+      hasDrawnThisTurn: true,
+      tableSets: [tableSet],
+      players: [
+        { id: 'player-1', name: 'You', type: 'human', hand: [std(7, 'spades')] },
+        {
+          id: 'player-2',
+          name: 'Bot 1',
+          type: 'bot',
+          hand: [std(2, 'clubs'), std(9, 'diamonds')],
+        },
+      ],
+    };
+
+    const won = addCardsToSet(state, 'set-final', ['spades-7']);
+    expect(won.ok).toBe(true);
+    expect(won.state.status).toBe('GAME_OVER');
+    expect(won.state.winnerId).toBe('player-1');
+    expect(won.state.winnerType).toBe('human');
+    expect(won.state.lastActionSummary).toBe('Congratulations! You won Sevens!');
+    expect(won.state.standings).toEqual([
+      {
+        rank: 1,
+        playerId: 'player-1',
+        name: 'You',
+        type: 'human',
+        cardsRemaining: 0,
+        isWinner: true,
+      },
+      {
+        rank: 2,
+        playerId: 'player-2',
+        name: 'Bot 1',
+        type: 'bot',
+        cardsRemaining: 2,
+        isWinner: false,
+      },
+    ]);
+
+    // Final table sets remain preserved in public view
+    const publicView = getPublicTableView(won.state);
+    expect(publicView.tableSets).toHaveLength(1);
+    expect(publicView.tableSets[0].cards).toHaveLength(4);
+    expect(publicView.winner?.id).toBe('player-1');
+
+    // Subsequent actions and repeated victory calls are blocked / no-op
+    expect(drawFromDeck(won.state).ok).toBe(false);
+    expect(drawFromDiscard(won.state).ok).toBe(false);
+    expect(discardCard(won.state, 'clubs-2').ok).toBe(false);
+    expect(chooseBotNextAction(won.state)).toBeNull();
+    expect(detectAndApplyVictory(won.state)).toBe(won.state);
+  });
+
+  it('detects bot victory and records bot winner metadata cleanly', () => {
+    const base = createGame({ playerCount: 2, handSize: 7, mode: 'vs-bots' });
+    const botNearWin: GameState = {
+      ...base,
+      currentPlayerIndex: 1,
+      phase: 'PLAY',
+      hasDrawnThisTurn: true,
+      players: [
+        { id: 'player-1', name: 'You', type: 'human', hand: [std(4, 'spades'), std(9, 'clubs')] },
+        { id: 'player-2', name: 'Bot 1', type: 'bot', hand: [std(12, 'hearts')] },
+      ],
+    };
+
+    const botWon = executeFullBotTurn(botNearWin, createDeterministicRng(50));
+    expect(botWon.status).toBe('GAME_OVER');
+    expect(botWon.winnerId).toBe('player-2');
+    expect(botWon.winnerType).toBe('bot');
+    expect(botWon.lastActionSummary).toBe('Game Over! Bot 1 (Bot) has won!');
+    expect(botWon.standings[0].isWinner).toBe(true);
+    expect(botWon.standings[0].type).toBe('bot');
+    expect(chooseBotNextAction(botWon)).toBeNull();
+  });
+});
+

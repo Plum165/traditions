@@ -68,7 +68,7 @@ export const sevensGame: Game = {
           items: [
             {
               title: 'Step 1: Draw',
-              text: 'Draw one card at the beginning of your turn.',
+              text: 'Draw exactly one card at the beginning of your turn—choosing either the top face-down card from the draw pile or the top face-up card from the discard pile.',
             },
             {
               title: 'Step 2: Play',

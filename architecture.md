@@ -87,15 +87,16 @@ The architecture follows three core engineering principles:
 
 ## 4. Sevens Engine & Interactive Architecture
 
-- **Pure State Transitions (`src/games/sevens/engine/gameEngine.ts`)**: All actions (`drawCard`, `playNewSet`, `addCardsToSet`, `replaceJokerInSet`, `discardCard`, `confirmPassDevice`) return immutable `MoveResult` objects and reject illegal actions without modifying state.
-- **Privacy Projection (`getPublicTableView`)**: In Pass-and-Play mode, `awaitingPassConfirmation` sets `visibleHand` to `null` until the incoming player explicitly confirms Ready on `PassDeviceScreen`. In Bot mode, bot hands are never exposed in `visibleHand`.
-- **Deterministic Bot Strategy (`src/games/sevens/engine/bot.ts`)**: Bots inspect only their own hand and public table state, prioritise Matching Sets over Consecutive Runs, enforce at most one new set per turn, replace Jokers when holding the missing card, extend existing sets, and discard low-utility cards.
+- **Pure State Transitions (`src/games/sevens/engine/gameEngine.ts`)**: All actions (`drawFromDeck`, `drawFromDiscard`, `playNewSet`, `addCardsToSet`, `replaceJokerInSet`, `discardCard`, `confirmPassDevice`) return immutable `MoveResult` objects and reject illegal actions without modifying state.
+- **Centralized Victory Detection (`detectAndApplyVictory`)**: Identifies human or bot winners identically, computes `standings`, locks post-game mutations, and preserves the complete table state in `SevensTable` without forced redirects.
+- **Privacy Projection (`getPublicTableView`)**: In Pass-and-Play mode, `awaitingPassConfirmation` sets `visibleHand` to `null` until the incoming player explicitly confirms **I'm Ready** on `PassDeviceScreen`. In Bot mode, bot hands are never exposed in `visibleHand`.
+- **Deterministic Bot Strategy (`src/games/sevens/engine/bot.ts`)**: Bots inspect only their own hand and public table state, evaluate beneficial top-discard pickups, prioritise Matching Sets over Consecutive Runs, enforce at most one new set per turn, replace Jokers when holding the missing card, extend existing sets, and discard low-utility cards.
 - **Configurable Unresolved Rules (`SevensRulesConfig`)**: Edge-case questions from `sevens.ts` (`allowDiscardJoker`, `allowImmediateJokerReuse`, `allowDiscardPickupTop`, `requireFinalDiscard`, `allowExtendJokerSets`) are exposed as setup toggles rather than silently invented as universal rules.
 
 ---
 
 ## 5. Responsive, Accessibility & SEO Architecture
 
-- **Mobile-First Layout**: Single-column mobile stacks expanding to multi-column editorial grids at `md`/`lg` breakpoints, touch targets `>= 44px`, and collapsible mobile Table of Contents on game pages.
+- **Mobile-First Layout (320px–1440px+)**: Vertical mobile table stacking (`Player Seats` -> `Draw/Discard Choice` -> `Table Sets` -> `Horizontally Scrollable Touch Hand Rail` -> `Turn Action Bar`), `>= 44px` touch targets, `overflow-x-hidden` page guards, and collapsible mobile Table of Contents on game pages.
 - **WCAG 2.2 AA Targets**: Semantic landmarks (`<header>`, `<nav>`, `<main>`, `<footer>`, `<article>`), skip-to-content link, keyboard-accessible mobile drawer with `Escape` dismissal, visible focus rings, `prefers-reduced-motion` support, and color-independent suit/status cues.
 - **SEO**: `DocumentHead` updates page `<title>`, `<meta name="description">`, OpenGraph tags, canonical URLs, and Schema.org JSON-LD per route, paired with `public/sitemap.xml`.

@@ -291,6 +291,26 @@ export function chooseBotNextAction(state: GameState): BotAction | null {
       if (createsMatching?.some((c) => c.id === topDiscard.id)) {
         return { type: 'DRAW', source: 'discard-pile' };
       }
+
+      const createsRun = findBestConsecutiveRun(
+        hypotheticalHand,
+        state.rules.requireFinalDiscard
+      );
+      if (createsRun?.some((c) => c.id === topDiscard.id)) {
+        return { type: 'DRAW', source: 'discard-pile' };
+      }
+
+      if (
+        state.tableSets.some(
+          (set) => validateAddToSet(set, [topDiscard], state.rules).valid
+        )
+      ) {
+        return { type: 'DRAW', source: 'discard-pile' };
+      }
+    }
+
+    if (state.drawPile.length === 0 && state.discardPile.length === 1) {
+      return { type: 'DRAW', source: 'discard-pile' };
     }
     return { type: 'DRAW', source: 'draw-pile' };
   }

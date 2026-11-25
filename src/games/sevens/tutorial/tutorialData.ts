@@ -215,7 +215,7 @@ export const TUTORIAL_LESSONS: TutorialLesson[] = [
     title: 'Drawing, Playing & Discarding',
     summary: 'Follow the three-step turn rhythm and the one-new-set-per-turn rule.',
     paragraphs: [
-      'Every turn follows three steps: (1) Draw one card, (2) Play valid sets or extensions if you wish, and (3) Discard one card to end your turn.',
+      'Every turn follows three steps: (1) Draw one card—either the top face-down card from the Draw Pile or the top face-up card from the Discard Pile (never deeper in the discard pile, and never both piles), (2) Play valid sets or extensions if you wish, and (3) Discard one card to end your turn.',
       'Important rule: during your Play step, you may create at most ONE new set per turn (3+ cards). However, you can still add cards to existing table sets or replace Jokers during the same turn.',
     ],
     question: {

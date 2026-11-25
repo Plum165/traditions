@@ -1,7 +1,10 @@
 import { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   AlertCircle,
   CheckCircle2,
+  ChevronDown,
+  Eye,
   Layers,
   Plus,
   RefreshCw,
@@ -9,7 +12,7 @@ import {
   Trophy,
 } from 'lucide-react';
 import { formatCardLabel } from '../engine/deck';
-import type { PublicTableView } from '../engine/types';
+import type { DrawSource, PublicTableView } from '../engine/types';
 import { validateNewSet } from '../engine/validation';
 import { GameCardTile } from './GameCardTile';
 
@@ -17,7 +20,7 @@ interface SevensTableProps {
   view: PublicTableView;
   errorMessage: string | null;
   onClearError: () => void;
-  onDraw: (source: 'draw-pile' | 'discard-pile') => void;
+  onDraw: (source: DrawSource) => void;
   onPlayNewSet: (cardIds: string[]) => void;
   onAddToSet: (setId: string, cardIds: string[]) => void;
   onReplaceJoker: (setId: string, cardId: string) => void;
@@ -47,11 +50,24 @@ export function SevensTable({
   allowDiscardPickupTop,
 }: SevensTableProps) {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [victoryDismissed, setVictoryDismissed] = useState(false);
+  const [showVictoryDetails, setShowVictoryDetails] = useState(false);
 
+  const isGameOver = view.status === 'GAME_OVER';
   const isHumanTurn =
     view.status === 'PLAYING' &&
     !view.awaitingPassConfirmation &&
     view.currentPlayer.type === 'human';
+
+  const canDrawFromDeck =
+    isHumanTurn && view.phase === 'DRAW' && !view.hasDrawnThisTurn && view.drawPileCount > 0;
+  const canDrawFromDiscard =
+    isHumanTurn &&
+    view.phase === 'DRAW' &&
+    !view.hasDrawnThisTurn &&
+    allowDiscardPickupTop &&
+    view.discardPileCount > 0 &&
+    view.topDiscard !== null;
 
   const visibleHand = view.visibleHand ?? [];
 
@@ -96,92 +112,212 @@ export function SevensTable({
     onDiscard(cardId);
   };
 
-  if (view.status === 'GAME_OVER') {
-    return (
-      <section
-        aria-labelledby="game-over-heading"
-        className="mx-auto max-w-2xl rounded-lg border border-[#DDD4C7] bg-[#F4EFE7] p-6 text-center sm:p-10"
-      >
-        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full border border-[#C8B08A] bg-[#FAF7F2] text-[#7C2D36]">
-          <Trophy className="h-7 w-7" aria-hidden="true" />
-        </div>
-
-        <p className="mt-4 font-mono text-xs font-medium tracking-wider text-[#6B6059] uppercase">
-          Round Complete · Turn {view.turnNumber}
-        </p>
-
-        <h2
-          id="game-over-heading"
-          className="mt-2 font-serif text-3xl font-semibold text-[#1E1A18] sm:text-4xl"
-        >
-          {view.winner ? `${view.winner.name} wins the round!` : 'Game Over'}
-        </h2>
-
-        <p className="mt-2 text-sm text-[#4A413B]">{view.lastActionSummary}</p>
-
-        <div className="mt-6 rounded-lg border border-[#DDD4C7] bg-[#FAF7F2] p-4 text-left">
-          <h3 className="font-sans text-xs font-semibold tracking-wider text-[#6B6059] uppercase">
-            Final Hand Counts
-          </h3>
-          <ul className="mt-3 divide-y divide-[#E6DED2] text-sm">
-            {view.players.map((player) => (
-              <li key={player.id} className="flex items-center justify-between py-2">
-                <span className="font-medium text-[#1E1A18]">
-                  {player.name}
-                  {player.id === view.winner?.id ? ' (Winner)' : ''}
-                </span>
-                <span className="font-mono text-xs text-[#524943] tabular-nums">
-                  {player.cardCount} {player.cardCount === 1 ? 'card' : 'cards'} left
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div className="mt-7 flex flex-wrap justify-center gap-3">
-          <button
-            type="button"
-            onClick={() => {
-              setSelectedIds([]);
-              onPlayAgain();
-            }}
-            className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md bg-[#7C2D36] px-5 py-2.5 text-sm font-medium text-[#FAF7F2] hover:bg-[#64222A]"
-          >
-            <RotateCcw className="h-4 w-4" aria-hidden="true" />
-            <span>Play Again</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={onChangeSetup}
-            className="inline-flex min-h-[44px] items-center justify-center rounded-md border border-[#C6B8A6] bg-[#FAF7F2] px-5 py-2.5 text-sm font-medium text-[#1E1A18] hover:bg-[#EFE8DC]"
-          >
-            Change Setup
-          </button>
-        </div>
-      </section>
-    );
-  }
+  const victoryHeadline = view.winner
+    ? view.winner.type === 'bot'
+      ? `Game Over! ${view.winner.name} (Bot) has won!`
+      : view.mode === 'vs-bots' && view.winner.name === 'You'
+        ? 'Congratulations! You won Sevens!'
+        : `Congratulations! ${view.winner.name} won Sevens!`
+    : 'Game Over';
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4 sm:space-y-5">
+      {/* Persistent Victory Notification (Preserves Game Table Below) */}
+      {isGameOver && (
+        <section
+          role="region"
+          aria-labelledby="victory-banner-heading"
+          className="rounded-lg border-2 border-[#7C2D36] bg-[#F4EFE7] p-4 shadow-sm sm:p-6"
+        >
+          {victoryDismissed ? (
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-3">
+                <Trophy className="h-5 w-5 shrink-0 text-[#7C2D36]" aria-hidden="true" />
+                <div>
+                  <h2
+                    id="victory-banner-heading"
+                    className="font-serif text-lg font-semibold text-[#1E1A18]"
+                  >
+                    {victoryHeadline}
+                  </h2>
+                  <p className="text-xs text-[#524943]">
+                    Viewing final game state · Turn {view.turnNumber}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setVictoryDismissed(false)}
+                  className="inline-flex min-h-[44px] items-center gap-1.5 rounded-md border border-[#C6B8A6] bg-[#FAF7F2] px-3.5 py-2 text-xs font-medium text-[#1E1A18] hover:bg-[#EFE8DC]"
+                >
+                  <Eye className="h-4 w-4" aria-hidden="true" />
+                  <span>Show Standings</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={onChangeSetup}
+                  className="inline-flex min-h-[44px] items-center justify-center rounded-md bg-[#7C2D36] px-4 py-2 text-xs font-medium text-[#FAF7F2] hover:bg-[#64222A]"
+                >
+                  New Game
+                </button>
+                <Link
+                  to="/games"
+                  className="inline-flex min-h-[44px] items-center justify-center rounded-md border border-[#C6B8A6] bg-[#FAF7F2] px-3.5 py-2 text-xs font-medium text-[#1E1A18] hover:bg-[#EFE8DC]"
+                >
+                  Return to Games
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <div>
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#C8B08A] bg-[#FAF7F2] text-[#7C2D36]">
+                    <Trophy className="h-5 w-5" aria-hidden="true" />
+                  </div>
+                  <div>
+                    <p className="font-mono text-xs font-medium tracking-wider text-[#6B6059] uppercase tabular-nums">
+                      Game Completed · Turn {view.turnNumber} · Winner Type:{' '}
+                      {view.winnerType === 'bot' ? 'Bot' : 'Human'}
+                    </p>
+                    <h2
+                      id="victory-banner-heading"
+                      className="mt-1 font-serif text-2xl font-semibold text-[#1E1A18] sm:text-3xl"
+                    >
+                      {victoryHeadline}
+                    </h2>
+                    <p className="mt-1 text-sm text-[#4A413B]">
+                      The final table, played sets, and player positions remain visible below.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Final Standings */}
+              <div className="mt-4 rounded-md border border-[#DDD4C7] bg-[#FAF7F2] p-3.5 sm:p-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-sans text-xs font-semibold tracking-wider text-[#6B6059] uppercase">
+                    Final Player Standings
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={() => setShowVictoryDetails((prev) => !prev)}
+                    aria-expanded={showVictoryDetails}
+                    className="inline-flex min-h-[36px] items-center gap-1 text-xs font-medium text-[#7C2D36] hover:text-[#5B1E25]"
+                  >
+                    <span>{showVictoryDetails ? 'Hide Details' : 'View More Details'}</span>
+                    <ChevronDown
+                      className={`h-3.5 w-3.5 transition-transform ${
+                        showVictoryDetails ? 'rotate-180' : ''
+                      }`}
+                      aria-hidden="true"
+                    />
+                  </button>
+                </div>
+
+                <ul className="mt-2.5 divide-y divide-[#E6DED2] text-sm">
+                  {view.standings.map((entry) => (
+                    <li
+                      key={entry.playerId}
+                      className="flex flex-wrap items-center justify-between gap-2 py-2"
+                    >
+                      <span className="font-medium text-[#1E1A18]">
+                        <span className="mr-2 font-mono text-xs text-[#6B6059] tabular-nums">
+                          #{entry.rank}
+                        </span>
+                        {entry.name} ({entry.type === 'bot' ? 'Bot' : 'Human'})
+                        {entry.isWinner ? ' — Winner' : ''}
+                      </span>
+                      <span className="font-mono text-xs text-[#524943] tabular-nums">
+                        {entry.cardsRemaining}{' '}
+                        {entry.cardsRemaining === 1 ? 'card' : 'cards'} remaining
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+
+                {showVictoryDetails && (
+                  <div className="mt-3 border-t border-[#E6DED2] pt-3 text-xs text-[#4A413B]">
+                    <p className="font-medium text-[#1E1A18]">
+                      Table Summary: {view.tableSets.length} completed sets ·{' '}
+                      {view.drawPileCount} cards left in draw pile · {view.discardPileCount} in
+                      discard pile
+                    </p>
+                    <p className="mt-2 font-medium text-[#6B6059]">Recent Moves:</p>
+                    <ul className="mt-1 space-y-1">
+                      {view.actionLog.slice(0, 5).map((entry, idx) => (
+                        <li key={`log-${idx}`}>{entry}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+
+              {/* Explicit User Navigation Actions */}
+              <div className="mt-5 flex flex-col gap-2.5 sm:flex-row sm:flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => setVictoryDismissed(true)}
+                  className="inline-flex min-h-[44px] items-center justify-center rounded-md border border-[#B9AA98] bg-[#FAF7F2] px-4 py-2.5 text-sm font-medium text-[#1E1A18] hover:bg-[#EFE8DC]"
+                >
+                  Continue Viewing Game
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedIds([]);
+                    setVictoryDismissed(false);
+                    onChangeSetup();
+                  }}
+                  className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md bg-[#7C2D36] px-4 py-2.5 text-sm font-medium text-[#FAF7F2] hover:bg-[#64222A]"
+                >
+                  <RotateCcw className="h-4 w-4" aria-hidden="true" />
+                  <span>New Game</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedIds([]);
+                    setVictoryDismissed(false);
+                    onPlayAgain();
+                  }}
+                  className="inline-flex min-h-[44px] items-center justify-center rounded-md border border-[#C6B8A6] bg-[#FAF7F2] px-4 py-2.5 text-sm font-medium text-[#1E1A18] hover:bg-[#EFE8DC]"
+                >
+                  Play Again (Same Setup)
+                </button>
+                <Link
+                  to="/games"
+                  className="inline-flex min-h-[44px] items-center justify-center rounded-md border border-[#C6B8A6] bg-[#FAF7F2] px-4 py-2.5 text-sm font-medium text-[#7C2D36] hover:bg-[#EFE8DC]"
+                >
+                  Return to Games
+                </Link>
+              </div>
+            </div>
+          )}
+        </section>
+      )}
+
       {/* Top Status & Player Positions */}
       <div className="rounded-lg border border-[#DDD4C7] bg-[#F4EFE7] p-4 sm:p-5">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#DDD4C7] pb-3.5">
-          <div>
+          <div className="min-w-0">
             <p className="font-mono text-xs text-[#6B6059] tabular-nums">
               Turn {view.turnNumber} ·{' '}
               {view.mode === 'pass-and-play' ? 'Pass and Play' : 'Play Against Bots'}
             </p>
-            <p className="mt-0.5 font-serif text-lg font-semibold text-[#1E1A18]">
-              {view.currentPlayer.name}’s Turn — {PHASE_LABEL[view.phase]}
+            <p className="mt-0.5 font-serif text-base font-semibold text-[#1E1A18] sm:text-lg">
+              {isGameOver
+                ? 'Final Board State'
+                : `${view.currentPlayer.name}’s Turn — ${PHASE_LABEL[view.phase]}`}
             </p>
           </div>
 
           <button
             type="button"
             onClick={onChangeSetup}
-            className="inline-flex min-h-[40px] items-center gap-1.5 rounded-md border border-[#C6B8A6] bg-[#FAF7F2] px-3.5 py-1.5 text-xs font-medium text-[#1E1A18] hover:bg-[#EFE8DC]"
+            className="inline-flex min-h-[44px] items-center gap-1.5 rounded-md border border-[#C6B8A6] bg-[#FAF7F2] px-3.5 py-2 text-xs font-medium text-[#1E1A18] hover:bg-[#EFE8DC]"
           >
             <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
             <span>New Game</span>
@@ -190,32 +326,43 @@ export function SevensTable({
 
         {/* Player Seats */}
         <div
-          className="mt-3.5 grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4"
+          className="mt-3.5 grid grid-cols-2 gap-2.5 lg:grid-cols-4"
           aria-label="Player positions"
         >
-          {view.players.map((player) => (
-            <div
-              key={player.id}
-              className={`flex items-center justify-between rounded-md border px-3.5 py-2.5 text-sm ${
-                player.isCurrentTurn
-                  ? 'border-[#7C2D36] bg-[#FAF7F2] ring-1 ring-[#7C2D36]/30'
-                  : 'border-[#DDD4C7] bg-[#FAF7F2]/60'
-              }`}
-            >
-              <div>
-                <p className="font-medium text-[#1E1A18]">
-                  {player.name}
-                  {player.type === 'bot' ? ' (Bot)' : ''}
-                </p>
-                <p className="text-xs text-[#6B6059]">
-                  {player.isCurrentTurn ? 'Active turn' : 'Waiting'}
-                </p>
+          {view.players.map((player) => {
+            const isWinner = view.winner?.id === player.id;
+            return (
+              <div
+                key={player.id}
+                className={`flex items-center justify-between gap-2 rounded-md border px-3 py-2.5 text-xs sm:px-3.5 sm:text-sm ${
+                  isWinner
+                    ? 'border-[#7C2D36] bg-[#FAF7F2] ring-1 ring-[#7C2D36]'
+                    : player.isCurrentTurn
+                      ? 'border-[#7C2D36] bg-[#FAF7F2] ring-1 ring-[#7C2D36]/30'
+                      : 'border-[#DDD4C7] bg-[#FAF7F2]/70'
+                }`}
+              >
+                <div className="min-w-0">
+                  <p className="truncate font-medium text-[#1E1A18]">
+                    {player.name}
+                    {player.type === 'bot' ? ' (Bot)' : ''}
+                  </p>
+                  <p className="text-[11px] text-[#6B6059] sm:text-xs">
+                    {isWinner
+                      ? 'Winner'
+                      : player.isCurrentTurn
+                        ? 'Active turn'
+                        : isGameOver
+                          ? 'Finished'
+                          : 'Waiting'}
+                  </p>
+                </div>
+                <span className="shrink-0 font-mono text-xs font-semibold text-[#1E1A18] tabular-nums">
+                  {player.cardCount} {player.cardCount === 1 ? 'card' : 'cards'}
+                </span>
               </div>
-              <span className="font-mono text-xs font-semibold text-[#1E1A18] tabular-nums">
-                {player.cardCount} {player.cardCount === 1 ? 'card' : 'cards'}
-              </span>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
@@ -234,89 +381,99 @@ export function SevensTable({
         ) : (
           <Layers className="mt-0.5 h-4 w-4 shrink-0 text-[#6B6059]" aria-hidden="true" />
         )}
-        <p>{errorMessage ?? view.lastActionSummary}</p>
+        <p className="min-w-0 break-words">{errorMessage ?? view.lastActionSummary}</p>
       </div>
 
       {/* Central Card Table */}
-      <div className="rounded-lg border-2 border-[#C6B8A6] bg-[#1E3D2F] p-4 text-[#FAF7F2] sm:p-6">
+      <div className="rounded-lg border-2 border-[#C6B8A6] bg-[#1E3D2F] p-3.5 text-[#FAF7F2] sm:p-6">
         <div className="grid gap-6 lg:grid-cols-12">
-          {/* Draw & Discard Piles */}
-          <div className="flex flex-wrap items-start gap-5 lg:col-span-4 lg:border-r lg:border-[#FAF7F2]/15 lg:pr-6">
-            {/* Draw Pile */}
-            <div className="flex flex-col items-start">
+          {/* Option A (Draw Pile) & Option B (Discard Pile) */}
+          <div className="grid grid-cols-2 gap-3 border-b border-[#FAF7F2]/15 pb-5 lg:col-span-4 lg:border-r lg:border-b-0 lg:pr-6 lg:pb-0">
+            {/* Option A: Face-Down Draw Pile */}
+            <div className="flex flex-col items-center rounded-md border border-[#FAF7F2]/15 bg-[#152D22] p-3 text-center">
               <span className="text-xs font-medium text-[#E6DED2]">Draw Pile</span>
+              <span className="mt-0.5 font-mono text-[11px] text-[#E6DED2]/80 tabular-nums">
+                {view.drawPileCount} remaining
+              </span>
+
+              <div
+                aria-hidden="true"
+                className="mt-2.5 flex h-24 w-[4.25rem] flex-col items-center justify-center rounded-md border-2 border-[#FAF7F2]/40 bg-[#7C2D36] text-[#FAF7F2] shadow-sm sm:h-28 sm:w-20"
+              >
+                <span className="font-serif text-xs font-semibold">Deck</span>
+                <span className="mt-1 font-mono text-xs tabular-nums">
+                  {view.drawPileCount}
+                </span>
+              </div>
+
               <button
                 type="button"
-                disabled={!isHumanTurn || view.phase !== 'DRAW'}
+                disabled={!canDrawFromDeck}
                 onClick={() => onDraw('draw-pile')}
-                className={`mt-2 flex h-28 w-20 flex-col items-center justify-center rounded-md border-2 text-center transition-transform sm:h-32 sm:w-22 ${
-                  isHumanTurn && view.phase === 'DRAW'
-                    ? 'cursor-pointer border-[#FAF7F2] bg-[#7C2D36] text-[#FAF7F2] shadow-md hover:-translate-y-1'
-                    : 'cursor-not-allowed border-[#FAF7F2]/25 bg-[#294F3E] text-[#E6DED2]/70'
-                }`}
+                className="mt-3 inline-flex min-h-[44px] w-full items-center justify-center rounded-md bg-[#FAF7F2] px-3 py-2 text-xs font-semibold text-[#1E1A18] transition-colors hover:bg-[#EFE8DC] disabled:cursor-not-allowed disabled:opacity-45"
               >
-                <span className="font-serif text-sm font-semibold">Draw</span>
-                <span className="mt-1 font-mono text-xs tabular-nums">
-                  {view.drawPileCount} left
-                </span>
+                Draw
               </button>
-              {isHumanTurn && view.phase === 'DRAW' && (
-                <span className="mt-1.5 text-xs text-[#F5EBD8]">Tap to draw 1 card</span>
-              )}
             </div>
 
-            {/* Discard Pile */}
-            <div className="flex flex-col items-start">
-              <span className="text-xs font-medium text-[#E6DED2] tabular-nums">
-                Discard Pile ({view.discardPileCount})
+            {/* Option B: Face-Up Discard Pile */}
+            <div className="flex flex-col items-center rounded-md border border-[#FAF7F2]/15 bg-[#152D22] p-3 text-center">
+              <span className="text-xs font-medium text-[#E6DED2]">Discard Pile</span>
+              <span className="mt-0.5 font-mono text-[11px] text-[#E6DED2]/80 tabular-nums">
+                {view.discardPileCount}{' '}
+                {view.discardPileCount === 1 ? 'card' : 'cards'}
               </span>
-              <div className="mt-2">
+
+              <div className="mt-2.5">
                 {view.topDiscard ? (
-                  <GameCardTile card={view.topDiscard} size="lg" />
+                  <GameCardTile card={view.topDiscard} size="md" />
                 ) : (
-                  <div className="flex h-28 w-20 items-center justify-center rounded-md border border-dashed border-[#FAF7F2]/30 text-xs text-[#E6DED2]/70 sm:h-32 sm:w-22">
+                  <div className="flex h-24 w-[4.25rem] items-center justify-center rounded-md border border-dashed border-[#FAF7F2]/30 text-xs text-[#E6DED2]/70 sm:h-28 sm:w-20">
                     Empty
                   </div>
                 )}
               </div>
-              {allowDiscardPickupTop &&
-                isHumanTurn &&
-                view.phase === 'DRAW' &&
-                view.topDiscard && (
-                  <button
-                    type="button"
-                    onClick={() => onDraw('discard-pile')}
-                    className="mt-2 min-h-[36px] rounded border border-[#FAF7F2]/40 bg-[#FAF7F2]/10 px-2.5 py-1 text-xs font-medium text-[#FAF7F2] hover:bg-[#FAF7F2]/20"
-                  >
-                    Take Top Discard
-                  </button>
-                )}
+
+              <button
+                type="button"
+                disabled={!canDrawFromDiscard}
+                onClick={() => onDraw('discard-pile')}
+                title={
+                  view.topDiscard
+                    ? `Take ${formatCardLabel(view.topDiscard)} from discard pile`
+                    : 'Discard pile is empty'
+                }
+                className="mt-3 inline-flex min-h-[44px] w-full items-center justify-center rounded-md border border-[#FAF7F2]/60 bg-[#FAF7F2]/10 px-2.5 py-2 text-xs font-semibold text-[#FAF7F2] transition-colors hover:bg-[#FAF7F2]/20 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                {view.topDiscard ? `Take ${formatCardLabel(view.topDiscard)}` : 'Take Discard'}
+              </button>
             </div>
           </div>
 
           {/* Table Sets Zone */}
           <div className="lg:col-span-8">
-            <div className="flex items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <h3 className="font-serif text-lg font-semibold text-[#FAF7F2]">
                 Sets on the Table ({view.tableSets.length})
               </h3>
               {view.hasCreatedNewSetThisTurn && isHumanTurn && (
                 <span className="text-xs text-[#F5EBD8]">
-                  New set played this turn · You may still add to existing sets
+                  New set played · You can still extend existing sets
                 </span>
               )}
             </div>
 
             {view.tableSets.length === 0 ? (
-              <div className="mt-3 rounded-md border border-dashed border-[#FAF7F2]/25 p-6 text-center text-sm text-[#E6DED2]">
-                No sets have been laid down yet. Draw a card, then select 3 or more cards in your
-                hand to create a Matching Set or Consecutive Run.
+              <div className="mt-3 rounded-md border border-dashed border-[#FAF7F2]/25 p-5 text-center text-sm text-[#E6DED2]">
+                No sets have been laid down yet. Draw from the Draw Pile or take the top Discard
+                card, then select 3 or more cards to play a Matching Set or Consecutive Run.
               </div>
             ) : (
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
                 {view.tableSets.map((set) => {
                   const hasJoker = set.cards.some((c) => c.kind === 'joker');
-                  const canShowExtend = isHumanTurn && view.phase === 'PLAY' && selectedIds.length >= 1;
+                  const canShowExtend =
+                    isHumanTurn && view.phase === 'PLAY' && selectedIds.length >= 1;
                   const canShowJokerSwap =
                     isHumanTurn &&
                     view.phase === 'PLAY' &&
@@ -335,14 +492,15 @@ export function SevensTable({
                         <span className="font-mono tabular-nums">{set.cards.length} cards</span>
                       </div>
 
-                      <div className="mt-2.5 flex flex-wrap gap-1.5">
+                      <div className="mt-2.5 flex flex-nowrap gap-1.5 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible">
                         {set.cards.map((card) => (
-                          <GameCardTile
-                            key={card.id}
-                            card={card}
-                            size="sm"
-                            highlight={card.kind === 'joker'}
-                          />
+                          <div key={card.id} className="shrink-0">
+                            <GameCardTile
+                              card={card}
+                              size="sm"
+                              highlight={card.kind === 'joker'}
+                            />
+                          </div>
                         ))}
                       </div>
 
@@ -352,7 +510,7 @@ export function SevensTable({
                             <button
                               type="button"
                               onClick={() => handleAddToSetClick(set.id)}
-                              className="inline-flex min-h-[36px] items-center gap-1 rounded bg-[#FAF7F2] px-2.5 py-1 text-xs font-medium text-[#1E1A18] hover:bg-[#EFE8DC]"
+                              className="inline-flex min-h-[40px] items-center gap-1 rounded bg-[#FAF7F2] px-3 py-1.5 text-xs font-medium text-[#1E1A18] hover:bg-[#EFE8DC]"
                             >
                               <Plus className="h-3.5 w-3.5" aria-hidden="true" />
                               <span>Add Selected</span>
@@ -362,7 +520,7 @@ export function SevensTable({
                             <button
                               type="button"
                               onClick={() => handleReplaceJokerClick(set.id)}
-                              className="inline-flex min-h-[36px] items-center gap-1 rounded border border-[#F5EBD8]/60 bg-[#6E4411] px-2.5 py-1 text-xs font-medium text-[#FAF7F2] hover:bg-[#5A360D]"
+                              className="inline-flex min-h-[40px] items-center gap-1 rounded border border-[#F5EBD8]/60 bg-[#6E4411] px-3 py-1.5 text-xs font-medium text-[#FAF7F2] hover:bg-[#5A360D]"
                             >
                               <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
                               <span>Replace Joker</span>
@@ -379,130 +537,146 @@ export function SevensTable({
         </div>
       </div>
 
-      {/* Player Hand & Action Controls */}
-      <section
-        aria-label="Your Hand and Turn Controls"
-        className="rounded-lg border border-[#DDD4C7] bg-[#FAF7F2] p-4 sm:p-6"
-      >
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E6DED2] pb-4">
-          <div>
-            <h3 className="font-serif text-xl font-semibold text-[#1E1A18]">
-              {view.mode === 'pass-and-play'
-                ? `${view.currentPlayer.name}’s Hand`
-                : 'Your Hand'}{' '}
-              <span className="font-mono text-sm font-normal text-[#6B6059] tabular-nums">
-                ({visibleHand.length} cards)
-              </span>
-            </h3>
-            <p className="mt-0.5 text-xs text-[#524943]">
-              {!isHumanTurn
-                ? `${view.currentPlayer.name} is taking their turn...`
-                : view.phase === 'DRAW'
-                  ? 'Start your turn by drawing a card from the Draw Pile above.'
-                  : 'Select 3+ cards to play a new set, select 1+ cards to extend a table set, or select 1 card to discard and end your turn.'}
+      {/* Player Hand & Touch-Friendly Turn Controls */}
+      {view.visibleHand !== null && (
+        <section
+          aria-label="Your Hand and Turn Controls"
+          className="rounded-lg border border-[#DDD4C7] bg-[#FAF7F2] p-4 sm:p-6"
+        >
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E6DED2] pb-3.5">
+            <div>
+              <h3 className="font-serif text-lg font-semibold text-[#1E1A18] sm:text-xl">
+                {view.mode === 'pass-and-play'
+                  ? `${view.currentPlayer.name}’s Hand`
+                  : 'Your Hand'}{' '}
+                <span className="font-mono text-sm font-normal text-[#6B6059] tabular-nums">
+                  ({visibleHand.length} {visibleHand.length === 1 ? 'card' : 'cards'})
+                </span>
+              </h3>
+              <p className="mt-0.5 text-xs text-[#524943]">
+                {isGameOver
+                  ? 'Game completed. Controls are locked while viewing the final board.'
+                  : !isHumanTurn
+                    ? `${view.currentPlayer.name} is taking their turn...`
+                    : view.phase === 'DRAW'
+                      ? 'Choose Draw or Take Discard above to start your turn.'
+                      : 'Tap cards to select. Swipe hand sideways if needed on small screens.'}
+              </p>
+            </div>
+
+            {selectedIds.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setSelectedIds([])}
+                className="min-h-[44px] rounded-md border border-[#C6B8A6] px-3.5 py-2 text-xs font-medium text-[#4A413B] hover:bg-[#EFE8DC]"
+              >
+                Deselect All ({selectedIds.length})
+              </button>
+            )}
+          </div>
+
+          {/* Mobile: Horizontal scrollable rail without cramped overlap; Desktop: Clean wrapped grid */}
+          {visibleHand.length === 0 ? (
+            <p className="mt-4 text-sm font-medium text-[#14532D]">
+              Hand is empty (0 cards left).
             </p>
-          </div>
-
-          {selectedIds.length > 0 && (
-            <button
-              type="button"
-              onClick={() => setSelectedIds([])}
-              className="min-h-[40px] rounded-md border border-[#C6B8A6] px-3 py-1.5 text-xs font-medium text-[#4A413B] hover:bg-[#EFE8DC]"
-            >
-              Clear Selection ({selectedIds.length})
-            </button>
-          )}
-        </div>
-
-        {/* Interactive Hand Cards */}
-        <div className="mt-5 flex flex-wrap gap-2.5 sm:gap-3">
-          {visibleHand.map((card) => (
-            <GameCardTile
-              key={card.id}
-              card={card}
-              selected={selectedIds.includes(card.id)}
-              disabled={!isHumanTurn || view.phase === 'DRAW'}
-              onClick={() => toggleCard(card.id)}
-            />
-          ))}
-        </div>
-
-        {/* Live Selection Validation & Action Bar */}
-        {isHumanTurn && view.phase !== 'DRAW' && (
-          <div className="mt-6 flex flex-col gap-4 rounded-lg border border-[#DDD4C7] bg-[#F4EFE7] p-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="text-sm">
-              {selectedCards.length === 0 ? (
-                <p className="text-[#524943]">No cards selected yet.</p>
-              ) : (
-                <div className="flex items-start gap-2">
-                  {selectionSetValidation?.valid && !view.hasCreatedNewSetThisTurn ? (
-                    <CheckCircle2
-                      className="mt-0.5 h-4 w-4 shrink-0 text-[#14532D]"
-                      aria-hidden="true"
-                    />
-                  ) : null}
-                  <div>
-                    <p className="font-medium text-[#1E1A18]">
-                      Selected: {selectedCards.map(formatCardLabel).join(', ')}
-                    </p>
-                    {selectedCards.length >= 3 && selectionSetValidation && (
-                      <p
-                        className={`mt-0.5 text-xs ${
-                          selectionSetValidation.valid ? 'text-[#14532D]' : 'text-[#7C2D36]'
-                        }`}
-                      >
-                        {selectionSetValidation.valid
-                          ? view.hasCreatedNewSetThisTurn
-                            ? 'Valid set, but you have already created 1 new set this turn.'
-                            : `Valid ${
-                                selectionSetValidation.setType === 'matching'
-                                  ? 'Matching Set'
-                                  : 'Consecutive Run'
-                              } ready to play.`
-                          : selectionSetValidation.reason}
-                      </p>
-                    )}
-                    {selectedCards.length === 1 && (
-                      <p className="mt-0.5 text-xs text-[#524943]">
-                        You can discard this card, add it to an existing set, or swap a Joker.
-                      </p>
-                    )}
-                    {selectedCards.length === 2 && (
-                      <p className="mt-0.5 text-xs text-[#524943]">
-                        Select at least 1 more card for a new set, or add these to an existing set.
-                      </p>
-                    )}
-                  </div>
+          ) : (
+            <div className="mt-3 flex flex-nowrap gap-2.5 overflow-x-auto px-1 pt-3 pb-3 sm:flex-wrap sm:gap-3 sm:overflow-visible">
+              {visibleHand.map((card) => (
+                <div key={card.id} className="shrink-0">
+                  <GameCardTile
+                    card={card}
+                    selected={selectedIds.includes(card.id)}
+                    disabled={!isHumanTurn || view.phase === 'DRAW'}
+                    onClick={() => toggleCard(card.id)}
+                  />
                 </div>
-              )}
+              ))}
             </div>
+          )}
 
-            <div className="flex flex-wrap items-center gap-2.5 shrink-0">
-              <button
-                type="button"
-                disabled={
-                  view.phase !== 'PLAY' ||
-                  view.hasCreatedNewSetThisTurn ||
-                  !selectionSetValidation?.valid
-                }
-                onClick={handlePlayNewSetClick}
-                className="inline-flex min-h-[44px] items-center justify-center rounded-md bg-[#7C2D36] px-4 py-2 text-sm font-medium text-[#FAF7F2] transition-colors hover:bg-[#64222A] disabled:cursor-not-allowed disabled:opacity-45"
-              >
-                Play New Set
-              </button>
+          {/* Turn Action Bar */}
+          {isHumanTurn && view.phase !== 'DRAW' && (
+            <div className="mt-4 flex flex-col gap-4 rounded-lg border border-[#DDD4C7] bg-[#F4EFE7] p-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="text-sm">
+                {selectedCards.length === 0 ? (
+                  <p className="text-[#524943]">
+                    Tap 3+ cards for a new set, 1+ cards to extend a table set, or 1 card to
+                    discard.
+                  </p>
+                ) : (
+                  <div className="flex items-start gap-2">
+                    {selectionSetValidation?.valid && !view.hasCreatedNewSetThisTurn ? (
+                      <CheckCircle2
+                        className="mt-0.5 h-4 w-4 shrink-0 text-[#14532D]"
+                        aria-hidden="true"
+                      />
+                    ) : null}
+                    <div>
+                      <p className="font-medium text-[#1E1A18]">
+                        Selected: {selectedCards.map(formatCardLabel).join(', ')}
+                      </p>
+                      {selectedCards.length >= 3 && selectionSetValidation && (
+                        <p
+                          className={`mt-0.5 text-xs ${
+                            selectionSetValidation.valid ? 'text-[#14532D]' : 'text-[#7C2D36]'
+                          }`}
+                        >
+                          {selectionSetValidation.valid
+                            ? view.hasCreatedNewSetThisTurn
+                              ? 'Valid set, but you have already created 1 new set this turn.'
+                              : `Valid ${
+                                  selectionSetValidation.setType === 'matching'
+                                    ? 'Matching Set'
+                                    : 'Consecutive Run'
+                                } ready to play.`
+                            : selectionSetValidation.reason}
+                        </p>
+                      )}
+                      {selectedCards.length === 1 && (
+                        <p className="mt-0.5 text-xs text-[#524943]">
+                          Tap Discard Selected to end your turn, or tap Add Selected / Replace
+                          Joker on a table set above.
+                        </p>
+                      )}
+                      {selectedCards.length === 2 && (
+                        <p className="mt-0.5 text-xs text-[#524943]">
+                          Select 1 more card for a new set, or tap Add Selected on an existing set
+                          above.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
 
-              <button
-                type="button"
-                disabled={selectedIds.length !== 1}
-                onClick={handleDiscardClick}
-                className="inline-flex min-h-[44px] items-center justify-center rounded-md border border-[#1E1A18] bg-[#FAF7F2] px-4 py-2 text-sm font-medium text-[#1E1A18] transition-colors hover:bg-[#EFE8DC] disabled:cursor-not-allowed disabled:opacity-45"
-              >
-                Discard Selected
-              </button>
+              <div className="grid grid-cols-2 gap-2.5 sm:flex sm:flex-wrap sm:items-center sm:shrink-0">
+                <button
+                  type="button"
+                  disabled={
+                    view.phase !== 'PLAY' ||
+                    view.hasCreatedNewSetThisTurn ||
+                    !selectionSetValidation?.valid
+                  }
+                  onClick={handlePlayNewSetClick}
+                  className="inline-flex min-h-[44px] items-center justify-center rounded-md bg-[#7C2D36] px-4 py-2 text-sm font-medium text-[#FAF7F2] transition-colors hover:bg-[#64222A] disabled:cursor-not-allowed disabled:opacity-45"
+                >
+                  Play Set
+                </button>
+
+                <button
+                  type="button"
+                  disabled={selectedIds.length !== 1}
+                  onClick={handleDiscardClick}
+                  className="inline-flex min-h-[44px] items-center justify-center rounded-md border border-[#1E1A18] bg-[#FAF7F2] px-4 py-2 text-sm font-medium text-[#1E1A18] transition-colors hover:bg-[#EFE8DC] disabled:cursor-not-allowed disabled:opacity-45"
+                >
+                  Discard
+                </button>
+              </div>
             </div>
-          </div>
-        )}
-      </section>
+          )}
+        </section>
+      )}
     </div>
   );
 }
