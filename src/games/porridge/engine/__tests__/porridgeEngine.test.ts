@@ -4,11 +4,9 @@ import { createCircle, getAvailableCircleSlots } from '../circle';
 import { createDeck, shuffleDeck } from '../deck';
 import {
   advanceTurn,
-  cancelSelection,
   chooseBotCardPosition,
   confirmBotSelection,
   confirmPassDevice,
-  confirmSelection,
   createPorridgeGame,
   getPublicPorridgeView,
   runBotTurn,
@@ -90,44 +88,29 @@ describe('Porridge (Sekaku) Game Engine', () => {
     });
   });
 
-  describe('Human Selection & Confirmation Privacy', () => {
-    it('keeps selected card hidden until confirmation, allows cancel, and removes confirmed slot permanently', () => {
+  describe('Human Direct Selection & Circle Privacy', () => {
+    it('immediately chooses and reveals a selected face-down card, hides unrevealed cards, and blocks reselecting removed cards', () => {
       const state = createPorridgeGame(makeSetup());
-      const firstPos = state.circle[0].positionId;
       const secondPos = state.circle[1].positionId;
 
-      // Select first slot
-      const select1 = selectCard(state, firstPos, 'player-1');
-      expect(select1.ok).toBe(true);
-      expect(select1.state.phase).toBe('confirming-selection');
+      // Before selecting, projected view must NOT expose any unrevealed circle card identity
+      const initialView = getPublicPorridgeView(state);
+      expect(initialView.publicCircle.every((slot) => !('card' in slot))).toBe(true);
+      expect(initialView.centralPile).toHaveLength(0);
 
-      // Projected view must NOT expose any unrevealed circle card identity
-      const viewBeforeConfirm = getPublicPorridgeView(select1.state);
-      expect(viewBeforeConfirm.selectedPositionId).toBe(firstPos);
-      expect(
-        viewBeforeConfirm.publicCircle.every((slot) => !('card' in slot))
-      ).toBe(true);
-      expect(viewBeforeConfirm.centralPile).toHaveLength(0);
+      // Selecting a card immediately chooses, reveals, removes it from circle, and resolves rules
+      const chosen = selectCard(state, secondPos, 'player-1');
+      expect(chosen.ok).toBe(true);
+      expect(chosen.state.circle[1].status).toBe('removed');
+      expect(chosen.state.centralPile).toHaveLength(1);
+      expect(chosen.state.pendingTurnAdvance).toBe(true);
 
-      // Cancel selection and pick another
-      const cancelled = cancelSelection(select1.state);
-      expect(cancelled.ok).toBe(true);
-      expect(cancelled.state.phase).toBe('selecting-card');
-      expect(cancelled.state.selectedPositionId).toBeNull();
-      expect(cancelled.state.circle[0].status).toBe('face-down');
+      // Cannot select another card while reveal transition is pending
+      const doubleTap = selectCard(chosen.state, state.circle[2].positionId, 'player-1');
+      expect(doubleTap.ok).toBe(false);
 
-      const select2 = selectCard(cancelled.state, secondPos, 'player-1');
-      expect(select2.ok).toBe(true);
-
-      // Confirm reveals card once and marks slot removed
-      const confirmed = confirmSelection(select2.state);
-      expect(confirmed.ok).toBe(true);
-      expect(confirmed.state.circle[1].status).toBe('removed');
-      expect(confirmed.state.centralPile).toHaveLength(1);
-      expect(confirmed.state.pendingTurnAdvance).toBe(true);
-
-      // Cannot select a removed card again
-      const afterAdvance = advanceTurn(confirmed.state).state;
+      // Cannot select a removed card again on a future turn
+      const afterAdvance = advanceTurn(chosen.state).state;
       const botDone = advanceTurn(runBotTurn(afterAdvance).state).state;
       const reselectRemoved = selectCard(botDone, secondPos, 'player-1');
       expect(reselectRemoved.ok).toBe(false);
@@ -185,9 +168,7 @@ describe('Porridge (Sekaku) Game Engine', () => {
       };
 
       // Turn 1 (Player 1): 7♥ -> starts pile
-      state = confirmSelection(
-        selectCard(state, state.circle[0].positionId, 'player-1').state
-      ).state;
+      state = selectCard(state, state.circle[0].positionId, 'player-1').state;
       expect(state.centralPile).toHaveLength(1);
       expect(state.players[0].cardsCollected).toBe(0);
 
@@ -195,9 +176,7 @@ describe('Porridge (Sekaku) Game Engine', () => {
       state = confirmPassDevice(advanceTurn(state).state).state;
 
       // Turn 2 (Player 2): 3♣ -> safe
-      state = confirmSelection(
-        selectCard(state, state.circle[1].positionId, 'player-2').state
-      ).state;
+      state = selectCard(state, state.circle[1].positionId, 'player-2').state;
       expect(state.centralPile).toHaveLength(2);
       expect(state.players[1].cardsCollected).toBe(0);
 
@@ -205,9 +184,7 @@ describe('Porridge (Sekaku) Game Engine', () => {
       state = confirmPassDevice(advanceTurn(state).state).state;
 
       // Turn 3 (Player 1): K♣ -> matches 3♣, collects all 3 cards
-      state = confirmSelection(
-        selectCard(state, state.circle[2].positionId, 'player-1').state
-      ).state;
+      state = selectCard(state, state.circle[2].positionId, 'player-1').state;
       expect(state.centralPile).toHaveLength(0);
       expect(state.players[0].cardsCollected).toBe(3);
       expect(state.collectionHistory).toHaveLength(1);
@@ -276,8 +253,10 @@ describe('Porridge (Sekaku) Game Engine', () => {
       expect(chooseBotCardPosition(state).ok).toBe(false);
 
       // Complete human turn -> advance to Bot 1
-      const afterHuman = confirmSelection(
-        selectCard(state, state.circle[0].positionId, 'player-1').state
+      const afterHuman = selectCard(
+        state,
+        state.circle[0].positionId,
+        'player-1'
       ).state;
       const botTurnState = advanceTurn(afterHuman).state;
       expect(botTurnState.phase).toBe('bot-thinking');

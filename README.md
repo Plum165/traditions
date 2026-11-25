@@ -10,7 +10,7 @@ A mobile-first digital cultural archive dedicated to documenting and preserving 
 - **Interactive Experiences**:
   - **Learn to Play Sevens** (`/games/sevens/learn`) — 7-lesson interactive tutorial with card examples, instant quiz feedback, and live set-validation practice.
   - **Play Sevens** (`/games/sevens/play`) — Mobile-first playable 2–4 player Sevens supporting Draw Pile or top Discard Pile drawing, differentiated shading for newly drawn cards, selectable **Everyday Classic** (multi-pip) or **Archival Minimal** card textures, live bot move telegraphing, 7-card and 11-card hands, Pass and Play with optional bot opponents and turn-privacy screens, deterministic bots, persistent on-table victory standings, post-game step-by-step match replay revealing bots' cards, and configurable unresolved house rules.
-  - **Play Porridge (Sekaku)** (`/games/porridge/play`) — Interactive 52-card circular game supporting Play Against Bots, Pass and Play with full-screen privacy handovers, Mixed Human + Bot tables, custom turn-order/sequence layout, pre-reveal card confirmation, Same-Suit and Highest-Colour rule variations, configurable Ace ranking, and persistent in-game victory standings.
+  - **Play Porridge (Sekaku)** (`/games/porridge/play`) — Interactive 52-card circular game supporting Play Against Bots, Pass and Play with full-screen privacy handovers, Mixed Human + Bot tables, custom turn-order/sequence layout, immediate single-tap card reveal, Same-Suit and Highest-Colour rule variations, configurable Ace ranking, and persistent in-game victory standings.
 - **Core Routes**:
   - `/` – Archive homepage and introduction
   - `/games` – Searchable, category-filtered Games Library

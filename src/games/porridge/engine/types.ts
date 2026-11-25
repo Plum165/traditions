@@ -15,7 +15,6 @@ export type PorridgePlayerType = 'human' | 'bot';
 export type PorridgeGamePhase =
   | 'waiting-for-player'
   | 'selecting-card'
-  | 'confirming-selection'
   | 'revealing-card'
   | 'resolving-rules'
   | 'collecting-pile'

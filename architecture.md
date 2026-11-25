@@ -61,7 +61,7 @@ The architecture follows three core engineering principles:
 │   ├── games/
 │   │   ├── porridge/
 │   │   │   ├── README.md          # Porridge engine, circle rules & configurable options docs
-│   │   │   ├── components/        # PorridgeCircle, CircleCard, CentralPorridgePile, SelectionConfirmation, PlayerStatus, PorridgePassDeviceScreen, PorridgeVictory, PorridgeSetupPanel, PorridgeTable
+│   │   │   ├── components/        # PorridgeCircle, CircleCard, CentralPorridgePile, PlayerStatus, PorridgePassDeviceScreen, PorridgeVictory, PorridgeSetupPanel, PorridgeTable
 │   │   │   └── engine/            # Pure 52-card deck, circle, Same-Suit/Highest-Colour rules, botStrategy, scoring, gameEngine, and Vitest suite
 │   │   └── sevens/
 │   │       ├── README.md          # Sevens engine & configurable rules docs
@@ -105,7 +105,7 @@ The architecture follows three core engineering principles:
 - **Configurable Unresolved Rules (`SevensRulesConfig`)**: Edge-case questions from `sevens.ts` (`allowDiscardJoker`, `allowImmediateJokerReuse`, `allowDiscardPickupTop`, `requireFinalDiscard`, `allowExtendJokerSets`) are exposed as setup toggles rather than silently invented as universal rules.
 
 ### Porridge / Sekaku (`src/games/porridge/`)
-- **52-Card Circle & Selection Confirmation (`src/games/porridge/engine/gameEngine.ts`)**: Generates a shuffled 52-card deck (no Jokers) placed face down into 52 stable circle slots (`createCircle`). Human turns require selecting a slot (`selectCard`) and confirming (`confirmSelection`) before revealing the card, or cancelling (`cancelSelection`) to pick another position.
+- **52-Card Circle & Direct Selection (`src/games/porridge/engine/gameEngine.ts`)**: Generates a shuffled 52-card deck (no Jokers) placed face down into 52 stable circle slots (`createCircle`). Selecting a slot (`selectCard`) immediately reveals the card, removes it from the circle, and evaluates the active rule variation.
 - **Rule Variations (`src/games/porridge/engine/rules.ts`)**: Implements both **Same-Suit Porridge** (`resolveSameSuitRule`) and **Highest-Colour Porridge** (`resolveHighestColourRule`, with central configurable Ace ranking and comparison card reference).
 - **Custom Turn Sequence & Mixed Modes (`PorridgeSetupPanel`)**: Supports Play Against Bots (with selectable 1st–4th human turn slot), Pass and Play, and Mixed Human + Bot tables (2–4 players) with seat reordering and Clockwise / Anticlockwise play direction.
 - **Privacy & Random Bot Selection (`botStrategy.ts`, `getPublicPorridgeView`)**: Hidden face-down card identities are stripped from `PublicCircleSlot` projections, bots pick uniformly at random from remaining `face-down` positions without peeking, and `PorridgePassDeviceScreen` hides the entire board and selection state until the next human taps **Ready**.

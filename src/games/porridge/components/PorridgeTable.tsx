@@ -5,7 +5,6 @@ import type { PublicPorridgeView } from '../engine/types';
 import { PlayerStatus } from './PlayerStatus';
 import { PorridgeCircle } from './PorridgeCircle';
 import { PorridgeVictory } from './PorridgeVictory';
-import { SelectionConfirmation } from './SelectionConfirmation';
 
 interface PorridgeTableProps {
   view: PublicPorridgeView;
@@ -13,8 +12,6 @@ interface PorridgeTableProps {
   cardTexture: CardTexture;
   onChangeCardTexture: (texture: CardTexture) => void;
   onSelectCard: (positionId: string, playerId: string) => void;
-  onConfirmSelection: () => void;
-  onCancelSelection: () => void;
   onContinueTurn: () => void;
   onPlayAgain: () => void;
   onNewGame: () => void;
@@ -26,8 +23,6 @@ export function PorridgeTable({
   cardTexture,
   onChangeCardTexture,
   onSelectCard,
-  onConfirmSelection,
-  onCancelSelection,
   onContinueTurn,
   onPlayAgain,
   onNewGame,
@@ -42,7 +37,7 @@ export function PorridgeTable({
     !view.awaitingPassConfirmation &&
     !view.pendingTurnAdvance &&
     view.currentPlayer.type === 'human' &&
-    (view.phase === 'selecting-card' || view.phase === 'confirming-selection');
+    view.phase === 'selecting-card';
 
   const selectedSlot = view.selectedPositionId
     ? view.publicCircle.find((s) => s.positionId === view.selectedPositionId) ?? null
@@ -133,17 +128,6 @@ export function PorridgeTable({
         </div>
       </div>
 
-      {/* Human Selection Confirmation */}
-      {isHumanSelecting &&
-        view.phase === 'confirming-selection' &&
-        selectedSlot && (
-          <SelectionConfirmation
-            positionNumber={selectedSlot.positionIndex + 1}
-            playerName={view.currentPlayer.name}
-            onConfirm={onConfirmSelection}
-            onCancel={onCancelSelection}
-          />
-        )}
 
       {/* Bot Action Prompt */}
       {isBotTurn && !view.pendingTurnAdvance && (

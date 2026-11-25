@@ -7,11 +7,9 @@ import { PorridgeSetupPanel } from '../games/porridge/components/PorridgeSetupPa
 import { PorridgeTable } from '../games/porridge/components/PorridgeTable';
 import {
   advanceTurn,
-  cancelSelection,
   chooseBotCardPosition,
   confirmBotSelection,
   confirmPassDevice,
-  confirmSelection,
   createPorridgeGame,
   getPublicPorridgeView,
   selectCard,
@@ -188,16 +186,6 @@ export function PorridgePlayPage() {
             onChangeCardTexture={handleCardTextureChange}
             onSelectCard={(positionId, playerId) => {
               const result = selectCard(gameState, positionId, playerId);
-              setGameState(result.state);
-              setErrorMessage(result.ok ? null : result.error ?? null);
-            }}
-            onConfirmSelection={() => {
-              const result = confirmSelection(gameState);
-              setGameState(result.state);
-              setErrorMessage(result.ok ? null : result.error ?? null);
-            }}
-            onCancelSelection={() => {
-              const result = cancelSelection(gameState);
               setGameState(result.state);
               setErrorMessage(result.ok ? null : result.error ?? null);
             }}

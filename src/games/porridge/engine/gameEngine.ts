@@ -122,7 +122,7 @@ export function selectCard(
   if (currentPlayer.id !== playerId) {
     return fail(state, `It is currently ${currentPlayer.name}’s turn.`);
   }
-  if (state.phase !== 'selecting-card' && state.phase !== 'confirming-selection') {
+  if (state.phase !== 'selecting-card') {
     return fail(state, 'Card selection is not active right now.');
   }
 
@@ -130,62 +130,19 @@ export function selectCard(
   if (!targetSlot) {
     return fail(state, 'Selected card position was not found.');
   }
-  if (targetSlot.status === 'removed') {
-    return fail(state, 'That card has already been removed from the circle.');
-  }
-  if (targetSlot.status === 'selected' && state.selectedPositionId === positionId) {
-    return { ok: true, state };
+  if (targetSlot.status !== 'face-down') {
+    return fail(state, 'That card is no longer available in the circle.');
   }
 
-  const nextCircle: CircleCardSlot[] = state.circle.map((slot) => {
-    if (slot.positionId === positionId) {
-      return { ...slot, status: 'selected' };
-    }
-    if (slot.status === 'selected') {
-      return { ...slot, status: 'face-down' };
-    }
-    return slot;
-  });
-
-  return {
-    ok: true,
-    state: {
-      ...state,
-      phase: 'confirming-selection',
-      circle: nextCircle,
-      selectedPositionId: positionId,
-      lastActionSummary: `${currentPlayer.name} selected circle position #${targetSlot.positionIndex + 1}. Confirm to reveal.`,
-    },
+  const preparedState: PorridgeGameState = {
+    ...state,
+    circle: state.circle.map((slot) =>
+      slot.positionId === positionId ? { ...slot, status: 'selected' } : slot
+    ),
+    selectedPositionId: positionId,
   };
-}
 
-export function cancelSelection(state: PorridgeGameState): PorridgeMoveResult {
-  if (state.status !== 'PLAYING') {
-    return fail(state, 'The game has already ended.');
-  }
-  if (state.phase !== 'confirming-selection' || !state.selectedPositionId) {
-    return fail(state, 'No pending card selection to cancel.');
-  }
-
-  const currentPlayer = state.players[state.currentPlayerIndex];
-  if (currentPlayer.type !== 'human') {
-    return fail(state, 'Cannot cancel a bot selection.');
-  }
-
-  const nextCircle: CircleCardSlot[] = state.circle.map((slot) =>
-    slot.status === 'selected' ? { ...slot, status: 'face-down' } : slot
-  );
-
-  return {
-    ok: true,
-    state: {
-      ...state,
-      phase: 'selecting-card',
-      circle: nextCircle,
-      selectedPositionId: null,
-      lastActionSummary: `${currentPlayer.name} cancelled their selection. Choose another face-down card.`,
-    },
-  };
+  return resolveSelectedSlot(preparedState);
 }
 
 export function collectCentralPile(
@@ -353,20 +310,6 @@ function resolveSelectedSlot(state: PorridgeGameState): PorridgeMoveResult {
   };
 }
 
-export function confirmSelection(state: PorridgeGameState): PorridgeMoveResult {
-  if (state.status !== 'PLAYING') {
-    return fail(state, 'The game has already ended.');
-  }
-  const currentPlayer = state.players[state.currentPlayerIndex];
-  if (currentPlayer.type !== 'human') {
-    return fail(state, 'Only human turns require manual confirmation.');
-  }
-  if (state.phase !== 'confirming-selection') {
-    return fail(state, 'No card selection is awaiting confirmation.');
-  }
-
-  return resolveSelectedSlot(state);
-}
 
 /**
  * Step 1 of a bot turn: selects a random remaining face-down position and highlights it.
