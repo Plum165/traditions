@@ -1,0 +1,6 @@
+{
+  "name": "Our Childhood – Digital Cultural Games Archive",
+  "description": "A digital cultural archive preserving Coloured childhood games, neighbourhood traditions, house rules, and shared memories across generations.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
