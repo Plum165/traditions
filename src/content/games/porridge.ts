@@ -88,7 +88,7 @@ export const porridgeGame: Game = {
             },
             {
               title: 'Continue around the circle',
-              text: 'Play continues with the next player and the remaining face-down cards in the outer circle.',
+              text: 'If no match occurred, play moves to the next player. When a player collects the central pile, that collecting player selects a card from the circle to start the new central pile.',
             },
           ],
         },
@@ -148,7 +148,7 @@ export const porridgeGame: Game = {
             },
             {
               title: 'Add to personal collection and continue',
-              text: 'Collected cards go into that player’s personal pile, and play continues with the remaining outer-circle cards.',
+              text: 'Collected cards go into that player’s personal pile, and the player who collected the pile selects a card from the outer circle to start the new central pile.',
             },
           ],
         },
@@ -253,7 +253,7 @@ export const porridgeGame: Game = {
   unconfirmedQuestions: [
     'Card values: Is Ace low, high, or dependent on the version? What are the values of Jack, Queen and King?',
     'Highest-colour comparison: Does the comparison always use the first card in the pile, or the previous card played?',
-    'After collecting: Does the player who collects the pile start the next central pile, or does the next player begin?',
+    'After collecting: Here the player who collects the pile chooses a card to start the next central pile; confirm whether any communities instead pass to the next player.',
     'End of the circle: Does the game end as soon as all outer-circle cards are used, or are collected cards reshuffled for another round?',
     'Ties: What happens if two players finish with the same lowest number of cards?',
     'Number of decks: Is the full 52-card deck always used, or can a smaller deck be used?',

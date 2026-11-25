@@ -188,6 +188,55 @@ describe('Porridge (Sekaku) Game Engine', () => {
       expect(state.centralPile).toHaveLength(0);
       expect(state.players[0].cardsCollected).toBe(3);
       expect(state.collectionHistory).toHaveLength(1);
+
+      // Collector (Player 1) keeps the turn to choose a card for the next pile (no self pass-device screen)
+      const nextAfterCollect = advanceTurn(state).state;
+      expect(nextAfterCollect.currentPlayerIndex).toBe(0);
+      expect(nextAfterCollect.awaitingPassConfirmation).toBe(false);
+      expect(nextAfterCollect.phase).toBe('selecting-card');
+
+      // Player 1 chooses the next card to start the fresh pile
+      const restartPile = selectCard(
+        nextAfterCollect,
+        nextAfterCollect.circle[3].positionId,
+        'player-1'
+      ).state;
+      expect(restartPile.centralPile).toHaveLength(1);
+    });
+
+    it('supports optional house rule where next player starts after collection instead of the collector', () => {
+      let state = createPorridgeGame(
+        makeSetup({
+          mode: 'pass-and-play',
+          variation: 'same-suit',
+          seats: [
+            { type: 'human', name: 'Player 1' },
+            { type: 'human', name: 'Player 2' },
+          ],
+          rules: { collectorStartsNextPile: false },
+        })
+      );
+
+      state = {
+        ...state,
+        circle: [
+          { ...state.circle[0], card: card(7, 'hearts') },
+          { ...state.circle[1], card: card(4, 'hearts') },
+          ...state.circle.slice(2),
+        ],
+      };
+
+      state = confirmPassDevice(
+        advanceTurn(selectCard(state, state.circle[0].positionId, 'player-1').state)
+          .state
+      ).state;
+      state = selectCard(state, state.circle[1].positionId, 'player-2').state;
+      expect(state.players[1].cardsCollected).toBe(2);
+
+      const nextTurn = advanceTurn(state).state;
+      expect(nextTurn.currentPlayerIndex).toBe(0);
+      expect(nextTurn.awaitingPassConfirmation).toBe(true);
+      expect(nextTurn.phase).toBe('passing-device');
     });
   });
 

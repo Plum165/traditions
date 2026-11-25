@@ -685,6 +685,42 @@ export function PorridgeSetupPanel({
                   </button>
                 </div>
               </div>
+
+              <div>
+                <p className="text-xs font-semibold text-[#1E1A18]">
+                  After Collecting the Pile
+                </p>
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setRules((r) => ({ ...r, collectorStartsNextPile: true }))
+                    }
+                    aria-pressed={rules.collectorStartsNextPile}
+                    className={`min-h-[40px] rounded border px-3 py-1.5 text-xs font-medium ${
+                      rules.collectorStartsNextPile
+                        ? 'border-[#7C2D36] bg-[#7C2D36] text-[#FAF7F2]'
+                        : 'border-[#C6B8A6] bg-[#FAF7F2] text-[#1E1A18]'
+                    }`}
+                  >
+                    Collector Picks Next Card (Default)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setRules((r) => ({ ...r, collectorStartsNextPile: false }))
+                    }
+                    aria-pressed={!rules.collectorStartsNextPile}
+                    className={`min-h-[40px] rounded border px-3 py-1.5 text-xs font-medium ${
+                      !rules.collectorStartsNextPile
+                        ? 'border-[#7C2D36] bg-[#7C2D36] text-[#FAF7F2]'
+                        : 'border-[#C6B8A6] bg-[#FAF7F2] text-[#1E1A18]'
+                    }`}
+                  >
+                    Next Player Starts
+                  </button>
+                </div>
+              </div>
             </div>
           )}
         </div>

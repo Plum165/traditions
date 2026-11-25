@@ -20,6 +20,7 @@ import type {
 export const DEFAULT_PORRIDGE_RULES: PorridgeRulesConfig = {
   aceRanking: 'ace-high',
   highestColourReference: 'first-in-pile',
+  collectorStartsNextPile: true,
 };
 
 function fail(state: PorridgeGameState, error: string): PorridgeMoveResult {
@@ -399,12 +400,18 @@ export function advanceTurn(state: PorridgeGameState): PorridgeMoveResult {
     return fail(state, 'Cannot advance turn before resolving a card.');
   }
 
+  const collectorContinues =
+    Boolean(state.lastRevealResult?.collected) &&
+    state.rules.collectorStartsNextPile;
   const previousPlayer = state.players[state.currentPlayerIndex];
-  const nextIndex = (state.currentPlayerIndex + 1) % state.players.length;
+  const nextIndex = collectorContinues
+    ? state.currentPlayerIndex
+    : (state.currentPlayerIndex + 1) % state.players.length;
   const nextPlayer = state.players[nextIndex];
   const humanCount = state.players.filter((p) => p.type === 'human').length;
 
-  const needsPassScreen = nextPlayer.type === 'human' && humanCount > 1;
+  const needsPassScreen =
+    !collectorContinues && nextPlayer.type === 'human' && humanCount > 1;
   const nextPhase =
     nextPlayer.type === 'bot'
       ? 'bot-thinking'
@@ -422,9 +429,11 @@ export function advanceTurn(state: PorridgeGameState): PorridgeMoveResult {
       pendingTurnAdvance: false,
       awaitingPassConfirmation: needsPassScreen,
       turnNumber: state.turnNumber + 1,
-      lastActionSummary: needsPassScreen
-        ? `Pass the device to ${nextPlayer.name}.`
-        : `${nextPlayer.name}’s turn.`,
+      lastActionSummary: collectorContinues
+        ? `${nextPlayer.name} collected the pile and chooses a card to start the next pile.`
+        : needsPassScreen
+          ? `Pass the device to ${nextPlayer.name}.`
+          : `${nextPlayer.name}’s turn.`,
     },
   };
 }

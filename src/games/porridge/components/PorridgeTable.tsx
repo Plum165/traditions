@@ -180,6 +180,9 @@ export function PorridgeTable({
             </p>
             <p className="mt-0.5 text-xs text-[#3F3833] sm:text-sm">
               {view.lastRevealResult.reason}
+              {view.lastRevealResult.collected && view.rules.collectorStartsNextPile
+                ? ` ${view.lastRevealResult.playerName} chooses the next card to start the new pile.`
+                : ''}
             </p>
           </div>
 
@@ -189,9 +192,13 @@ export function PorridgeTable({
             className="inline-flex min-h-[44px] shrink-0 items-center justify-center gap-2 rounded-md bg-[#7C2D36] px-4 py-2 text-xs font-semibold text-[#FAF7F2] hover:bg-[#64222A] sm:text-sm"
           >
             <span>
-              {view.players.filter((p) => p.type === 'human').length > 1
-                ? 'Pass Device Next'
-                : 'Continue'}
+              {view.lastRevealResult.collected && view.rules.collectorStartsNextPile
+                ? view.lastRevealResult.playerType === 'human'
+                  ? 'Choose Next Card'
+                  : 'Continue'
+                : view.players.filter((p) => p.type === 'human').length > 1
+                  ? 'Pass Device Next'
+                  : 'Continue'}
             </span>
             <ArrowRight className="h-4 w-4" aria-hidden="true" />
           </button>

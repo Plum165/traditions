@@ -43,6 +43,7 @@ export interface PorridgePlayer {
 export interface PorridgeRulesConfig {
   aceRanking: AceRankingMode;
   highestColourReference: HighestColourReference;
+  collectorStartsNextPile: boolean;
 }
 
 export interface PorridgeSeatConfig {
