@@ -4,14 +4,16 @@ A mobile-first digital cultural archive dedicated to documenting and preserving 
 
 ## Current Archive Scope
 
-- **First Published Game**: **Sevens** (`/games/sevens`), documenting the 54-card deck (52 cards + 2 Jokers), 7-card and 11-card starting hand variations, matching sets, consecutive runs, Joker replacement rules, and open questions requiring community confirmation.
+- **Published Games**:
+  - **Sevens** (`/games/sevens`, `OC-001`) — Documenting the 54-card deck (52 cards + 2 Jokers), 7-card and 11-card starting hand variations, matching sets, consecutive runs, Joker replacement rules, and open questions requiring community confirmation.
+  - **Porridge / Sekaku** (`/games/porridge`, `OC-002`) — Documenting the South African face-down circle card game with Same-Suit Porridge and Highest-Colour house-rule variations, side-by-side rules comparison, and open community questions.
 - **Interactive Sevens Experience**:
   - **Learn to Play** (`/games/sevens/learn`) — 7-lesson interactive tutorial with card examples, instant quiz feedback, and live set-validation practice.
   - **Play Sevens** (`/games/sevens/play`) — Mobile-first playable 2–4 player Sevens supporting Draw Pile or top Discard Pile drawing, differentiated shading for newly drawn cards, selectable **Everyday Classic** (multi-pip) or **Archival Minimal** card textures, live bot move telegraphing, 7-card and 11-card hands, Pass and Play with optional bot opponents and turn-privacy screens, deterministic bots, persistent on-table victory standings, post-game step-by-step match replay revealing bots' cards, and configurable unresolved house rules.
 - **Core Routes**:
   - `/` – Archive homepage and introduction
   - `/games` – Searchable, category-filtered Games Library
-  - `/games/:slug` – Reusable game documentation template
+  - `/games/:slug` – Reusable game documentation template (`/games/sevens`, `/games/porridge`)
   - `/games/sevens/learn` – Interactive Sevens tutorial
   - `/games/sevens/play` – Playable Sevens card game
   - `/about` – Project purpose and cultural preservation principles

@@ -92,17 +92,24 @@ export function AboutPage() {
               How the archive grows
             </h2>
             <p className="mt-4 max-w-prose text-base leading-[1.75] text-[#2D2724]">
-              Rather than launching with dozens of hurried summaries, the archive launches with one
-              complete, transparent entry—<Link to="/games/sevens" className="font-medium text-[#7C2D36] underline underline-offset-4">Sevens</Link>. Every future addition is
-              structured around a shared template supporting card games, street games, playground
-              games, and group traditions.
+              Rather than launching with dozens of hurried summaries, the archive grows carefully
+              with transparent, thoroughly structured entries—including{' '}
+              <Link to="/games/sevens" className="font-medium text-[#7C2D36] underline underline-offset-4">
+                Sevens
+              </Link>{' '}
+              and{' '}
+              <Link to="/games/porridge" className="font-medium text-[#7C2D36] underline underline-offset-4">
+                Porridge (Sekaku)
+              </Link>
+              . Every addition uses a shared template supporting card games, street games,
+              playground games, and group traditions.
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
               <Link
-                to="/games/sevens"
+                to="/games"
                 className="inline-flex min-h-[44px] items-center justify-center rounded-md bg-[#7C2D36] px-5 py-2.5 text-sm font-medium text-[#FAF7F2] hover:bg-[#64222A]"
               >
-                Read the Sevens Entry
+                Browse Documented Games
               </Link>
               <Link
                 to="/contribute"

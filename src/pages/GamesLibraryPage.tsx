@@ -45,7 +45,7 @@ export function GamesLibraryPage() {
     <>
       <DocumentHead
         title="Games Library – Our Childhood Archive"
-        description="Browse documented Coloured childhood games, filter by category, and explore verified rules and variations. Currently featuring Sevens, with more games to be added."
+        description="Browse documented Coloured childhood games including Sevens and Porridge (Sekaku), filter by category, and explore verified rules and variations."
         structuredData={{
           '@context': 'https://schema.org',
           '@type': 'CollectionPage',
@@ -64,9 +64,10 @@ export function GamesLibraryPage() {
             Games Library
           </h1>
           <p className="mt-3 max-w-2xl text-base leading-relaxed text-[#4A413B]">
-            Explore documented childhood games, rules, and household variations. The archive begins
-            with <strong className="font-medium text-[#1E1A18]">Sevens</strong> and will grow over
-            time as additional games are carefully verified and published.
+            Explore documented childhood games, rules, and household variations—including{' '}
+            <strong className="font-medium text-[#1E1A18]">Sevens</strong> and{' '}
+            <strong className="font-medium text-[#1E1A18]">Porridge (Sekaku)</strong>—with more
+            entries added as community rules are verified and published.
           </p>
 
           {/* Search and Category Controls */}
@@ -183,8 +184,9 @@ export function GamesLibraryPage() {
               No documented games matched “{query}”
             </h2>
             <p className="mx-auto mt-3 max-w-lg text-sm leading-relaxed text-[#4A413B] sm:text-base">
-              The archive currently contains one published game (Sevens). If you remember the game
-              you searched for, we would love to document it with your help.
+              The archive currently contains {PUBLISHED_GAMES.length} published{' '}
+              {PUBLISHED_GAMES.length === 1 ? 'game' : 'games'}. If you remember the game you
+              searched for, we would love to document it with your help.
             </p>
             <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
               <button

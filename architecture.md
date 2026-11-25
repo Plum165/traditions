@@ -54,6 +54,7 @@ The architecture follows three core engineering principles:
 │   │   ├── README.md              # Guide to authoring new games
 │   │   └── games/
 │   │       ├── index.ts           # Central game registry & query helpers
+│   │       ├── porridge.ts        # Porridge (Sekaku) documentation
 │   │       └── sevens.ts          # Sevens baseline documentation
 │   ├── games/
 │   │   └── sevens/

@@ -19,7 +19,7 @@ export function HomePage() {
     <>
       <DocumentHead
         title="Our Childhood – Digital Cultural Games Archive"
-        description="Preserving Coloured childhood games, house rules, and neighbourhood traditions. Explore documented rules for Sevens and contribute family memories."
+        description="Preserving Coloured childhood games, house rules, and neighbourhood traditions. Explore documented rules for Sevens and Porridge (Sekaku) and contribute family memories."
         structuredData={{
           '@context': 'https://schema.org',
           '@type': 'WebSite',
@@ -120,11 +120,11 @@ export function HomePage() {
             </div>
             <div>
               <h3 className="font-serif text-lg font-semibold text-[#1E1A18]">
-                03. Built to Grow Slowly
+                03. Built to Grow Carefully
               </h3>
               <p className="mt-2 text-sm leading-relaxed text-[#4A413B]">
-                We begin with one carefully documented game—Sevens—and expand only as real
-                community knowledge and recollections are verified.
+                Each game—beginning with Sevens and Porridge (Sekaku)—is added only after real
+                community rules, variations, and open questions are documented honestly.
               </p>
             </div>
           </div>
@@ -137,10 +137,10 @@ export function HomePage() {
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="font-sans text-xs font-medium tracking-wider text-[#6B6059] uppercase">
-                First Archival Entry
+                Documented Archival Entries
               </p>
               <h2 className="mt-1 font-serif text-2xl font-semibold text-[#1E1A18] sm:text-3xl">
-                Featured Game
+                Featured Games
               </h2>
             </div>
             <Link
@@ -153,7 +153,7 @@ export function HomePage() {
           </div>
 
           <div className="mt-8 grid items-start gap-8 lg:grid-cols-12">
-            <div className="lg:col-span-7">
+            <div className="space-y-6 lg:col-span-7">
               {featuredGames.map((game) => (
                 <GameCard key={game.id} game={game} />
               ))}
@@ -161,12 +161,14 @@ export function HomePage() {
 
             <aside className="rounded-lg border border-[#DDD4C7] bg-[#F4EFE7] p-6 lg:col-span-5">
               <h3 className="font-serif text-xl font-semibold text-[#1E1A18]">
-                Starting with Sevens
+                Growing Game by Game
               </h3>
               <p className="mt-3 text-sm leading-relaxed text-[#3F3833] sm:text-base">
-                Sevens is the first game published in the Our Childhood archive. Rather than
-                filling the library with invented entries, each game is added only after its rules,
-                variations, and unresolved edge cases are carefully documented.
+                The archive currently documents{' '}
+                <strong className="font-medium text-[#1E1A18]">Sevens</strong> (OC-001) and{' '}
+                <strong className="font-medium text-[#1E1A18]">Porridge / Sekaku</strong> (OC-002).
+                Rather than filling the library with invented entries, each game is published only
+                after its rules, variations, and unresolved edge cases are carefully recorded.
               </p>
               <p className="mt-3 text-sm leading-relaxed text-[#524943]">
                 More card games, street games, and playground traditions will be added over time
@@ -283,9 +285,9 @@ export function HomePage() {
                 Help grow the archive with your memories
               </h2>
               <p className="mt-2.5 text-base leading-relaxed text-[#3F3833]">
-                Know a childhood game that belongs here, remember a different name for Sevens, or
-                can confirm one of the open house-rule questions? Read how contributions are
-                documented and reviewed.
+                Know a childhood game that belongs here, remember another name for Sevens or
+                Porridge (Sekaku), or can confirm one of the open house-rule questions? Read how
+                contributions are documented and reviewed.
               </p>
             </div>
             <div className="shrink-0">

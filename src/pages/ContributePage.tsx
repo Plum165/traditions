@@ -23,7 +23,7 @@ const WAYS_TO_CONTRIBUTE = [
   {
     title: '02. Suggest Corrections',
     description:
-      'Spot something unclear or incomplete in a published entry—or help answer one of the open confirmation questions on the Sevens page.',
+      'Spot something unclear or incomplete in a published entry—or help answer open confirmation questions on entries like Sevens or Porridge (Sekaku).',
   },
   {
     title: '03. Share Alternative House Rules',
@@ -124,14 +124,21 @@ export function ContributePage() {
             </p>
             <p className="mt-4 text-base leading-[1.75] text-[#2D2724]">
               In the meantime, you can prepare your notes using the checklist outline alongside—and
-              check the{' '}
+              check the open confirmation questions on{' '}
               <Link
                 to="/games/sevens#rules-requiring-confirmation"
                 className="font-medium text-[#7C2D36] underline underline-offset-4"
               >
-                six open questions on the Sevens page
+                Sevens
               </Link>{' '}
-              if you want to help confirm our first entry.
+              or{' '}
+              <Link
+                to="/games/porridge#rules-requiring-confirmation"
+                className="font-medium text-[#7C2D36] underline underline-offset-4"
+              >
+                Porridge (Sekaku)
+              </Link>{' '}
+              to help verify community rules.
             </p>
           </div>
 
