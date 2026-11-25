@@ -52,6 +52,7 @@ The architecture follows three core engineering principles:
 │   │       └── PlayingCardDiagram.tsx
 │   ├── content/
 │   │   ├── README.md              # Guide to authoring new games
+│   │   ├── __tests__/             # Registry & archival schema Vitest suite
 │   │   └── games/
 │   │       ├── index.ts           # Central game registry & query helpers
 │   │       ├── porridge.ts        # Porridge (Sekaku) documentation
