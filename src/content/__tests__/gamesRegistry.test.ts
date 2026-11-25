@@ -20,6 +20,7 @@ describe('Archive Games Registry', () => {
     expect(porridge?.unconfirmedQuestions).toHaveLength(6);
     expect(porridge?.variations).toHaveLength(2);
     expect(porridge?.coverImage.isIllustrative).toBe(true);
+    expect(porridge?.interactiveExperiences?.playPath).toBe('/games/porridge/play');
 
     const aliasResults = searchGames('sekaku', 'Card Games');
     expect(aliasResults.map((g) => g.slug)).toEqual(['porridge']);

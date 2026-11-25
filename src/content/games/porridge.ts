@@ -21,6 +21,12 @@ export const porridgeGame: Game = {
   },
   status: 'published',
   featured: true,
+  interactiveExperiences: {
+    playPath: '/games/porridge/play',
+    playLabel: 'Play Porridge',
+    rulesAnchorId: 'same-suit-porridge',
+    rulesLabel: 'Read Full Rules',
+  },
   playerCount: '2 or more players',
   equipment: ['One standard 52-card playing deck', 'A flat playing surface'],
   difficulty: 'Easy to learn',

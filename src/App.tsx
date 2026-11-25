@@ -22,6 +22,11 @@ const SevensPlayPage = lazy(() =>
     default: mod.SevensPlayPage,
   }))
 );
+const PorridgePlayPage = lazy(() =>
+  import('./pages/PorridgePlayPage').then((mod) => ({
+    default: mod.PorridgePlayPage,
+  }))
+);
 const AboutPage = lazy(() =>
   import('./pages/AboutPage').then((mod) => ({ default: mod.AboutPage }))
 );
@@ -51,6 +56,7 @@ export default function App() {
               <Route path="/games" element={<GamesLibraryPage />} />
               <Route path="/games/sevens/learn" element={<SevensTutorialPage />} />
               <Route path="/games/sevens/play" element={<SevensPlayPage />} />
+              <Route path="/games/porridge/play" element={<PorridgePlayPage />} />
               <Route path="/games/:slug" element={<GamePage />} />
               <Route path="/about" element={<AboutPage />} />
               <Route path="/contribute" element={<ContributePage />} />

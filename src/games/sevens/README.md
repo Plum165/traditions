@@ -11,7 +11,7 @@ This folder contains the pure game rules engine, deterministic bot logic, tutori
 - `engine/bot.ts` — Deterministic rule-based bot evaluating top-discard pickups, prioritizing Matching Sets over Consecutive Runs, creating at most 1 new set per turn, replacing Jokers, extending sets, and discarding strategically without inspecting other players' private hands.
 - `engine/__tests__/sevensEngine.test.ts` — Automated Vitest suite verifying deck, rules, top-discard vs deck drawing, Joker logic, bot priorities, Pass-and-Play privacy (including mixed human + bot tables), drawn-card tracking, bot feed telegraphing, post-game replay unlocking, and persistent victory locking.
 - `tutorial/tutorialData.ts` — 7-lesson interactive tutorial curriculum and practice hand cards.
-- `components/` — Responsive touch-friendly UI components (`GameCardTile` with `archival` and multi-pip `classic` card textures, `SevensSetupPanel`, `PassDeviceScreen`, `SevensTable`, `SevensReplayViewer`).
+- `components/` — Responsive touch-friendly UI components (`SevensSetupPanel`, `PassDeviceScreen`, `SevensTable`, `SevensReplayViewer`, plus shared `GameCardTile` from `src/components/games/GameCardTile.tsx` with `archival` and multi-pip `classic` card textures).
 
 ## Drawing, Telegraphing, Replay & Victory State Rules
 
