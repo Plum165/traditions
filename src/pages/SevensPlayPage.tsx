@@ -16,12 +16,40 @@ import {
   playNewSet,
   replaceJokerInSet,
 } from '../games/sevens/engine/gameEngine';
-import type { GameSetupConfig, GameState } from '../games/sevens/engine/types';
+import type {
+  CardTexture,
+  GameSetupConfig,
+  GameState,
+} from '../games/sevens/engine/types';
+
+const TEXTURE_STORAGE_KEY = 'our-childhood:sevens-card-texture';
+
+function loadInitialCardTexture(): CardTexture {
+  try {
+    const stored = window.localStorage.getItem(TEXTURE_STORAGE_KEY);
+    if (stored === 'classic' || stored === 'archival') {
+      return stored;
+    }
+  } catch {
+    // Ignore storage errors in restricted iframes
+  }
+  return 'archival';
+}
 
 export function SevensPlayPage() {
   const [setupConfig, setSetupConfig] = useState<GameSetupConfig | null>(null);
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [cardTexture, setCardTexture] = useState<CardTexture>(loadInitialCardTexture);
+
+  const handleCardTextureChange = (texture: CardTexture) => {
+    setCardTexture(texture);
+    try {
+      window.localStorage.setItem(TEXTURE_STORAGE_KEY, texture);
+    } catch {
+      // Ignore storage errors
+    }
+  };
 
   const handleStartGame = (config: GameSetupConfig) => {
     setSetupConfig(config);
@@ -101,6 +129,8 @@ export function SevensPlayPage() {
         {!gameState || !tableView ? (
           <SevensSetupPanel
             initialConfig={setupConfig ?? undefined}
+            cardTexture={cardTexture}
+            onChangeCardTexture={handleCardTextureChange}
             onStartGame={handleStartGame}
           />
         ) : tableView.awaitingPassConfirmation ? (
@@ -118,6 +148,8 @@ export function SevensPlayPage() {
             errorMessage={errorMessage}
             onClearError={() => setErrorMessage(null)}
             allowDiscardPickupTop={gameState.rules.allowDiscardPickupTop}
+            cardTexture={cardTexture}
+            onChangeCardTexture={handleCardTextureChange}
             onDraw={(source) => {
               const result = drawCard(gameState, source);
               setGameState(result.state);

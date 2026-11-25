@@ -14,7 +14,12 @@ import {
   Trophy,
 } from 'lucide-react';
 import { formatCardLabel } from '../engine/deck';
-import type { DrawSource, PublicTableView, ReplayActionType } from '../engine/types';
+import type {
+  CardTexture,
+  DrawSource,
+  PublicTableView,
+  ReplayActionType,
+} from '../engine/types';
 import { validateNewSet } from '../engine/validation';
 import { GameCardTile } from './GameCardTile';
 import { SevensReplayViewer } from './SevensReplayViewer';
@@ -31,6 +36,8 @@ interface SevensTableProps {
   onPlayAgain: () => void;
   onChangeSetup: () => void;
   allowDiscardPickupTop: boolean;
+  cardTexture: CardTexture;
+  onChangeCardTexture: (texture: CardTexture) => void;
 }
 
 const PHASE_LABEL: Record<PublicTableView['phase'], string> = {
@@ -68,6 +75,8 @@ export function SevensTable({
   onPlayAgain,
   onChangeSetup,
   allowDiscardPickupTop,
+  cardTexture,
+  onChangeCardTexture,
 }: SevensTableProps) {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [victoryDismissed, setVictoryDismissed] = useState(false);
@@ -364,6 +373,7 @@ export function SevensTable({
       {isGameOver && showReplay && view.replayFrames && view.replayFrames.length > 0 && (
         <SevensReplayViewer
           frames={view.replayFrames}
+          cardTexture={cardTexture}
           onClose={() => setShowReplay(false)}
         />
       )}
@@ -374,7 +384,11 @@ export function SevensTable({
           <div className="min-w-0">
             <p className="font-mono text-xs text-[#6B6059] tabular-nums">
               Turn {view.turnNumber} ·{' '}
-              {view.mode === 'pass-and-play' ? 'Pass and Play' : 'Play Against Bots'}
+              {view.mode === 'pass-and-play'
+                ? view.players.some((p) => p.type === 'bot')
+                  ? 'Pass and Play + Bots'
+                  : 'Pass and Play'
+                : 'Play Against Bots'}
             </p>
             <p className="mt-0.5 font-serif text-base font-semibold text-[#1E1A18] sm:text-lg">
               {isGameOver
@@ -383,14 +397,29 @@ export function SevensTable({
             </p>
           </div>
 
-          <button
-            type="button"
-            onClick={onChangeSetup}
-            className="inline-flex min-h-[44px] items-center gap-1.5 rounded-md border border-[#C6B8A6] bg-[#FAF7F2] px-3.5 py-2 text-xs font-medium text-[#1E1A18] hover:bg-[#EFE8DC]"
-          >
-            <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
-            <span>New Game</span>
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() =>
+                onChangeCardTexture(cardTexture === 'classic' ? 'archival' : 'classic')
+              }
+              aria-pressed={cardTexture === 'classic'}
+              className="inline-flex min-h-[44px] items-center gap-1.5 rounded-md border border-[#C6B8A6] bg-[#FAF7F2] px-3 py-2 text-xs font-medium text-[#1E1A18] hover:bg-[#EFE8DC]"
+            >
+              <span>
+                Cards: {cardTexture === 'classic' ? 'Everyday Classic' : 'Archival Minimal'}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={onChangeSetup}
+              className="inline-flex min-h-[44px] items-center gap-1.5 rounded-md border border-[#C6B8A6] bg-[#FAF7F2] px-3.5 py-2 text-xs font-medium text-[#1E1A18] hover:bg-[#EFE8DC]"
+            >
+              <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
+              <span>New Game</span>
+            </button>
+          </div>
         </div>
 
         {/* Player Seats */}
@@ -565,7 +594,11 @@ export function SevensTable({
 
               <div className="mt-2.5">
                 {view.topDiscard ? (
-                  <GameCardTile card={view.topDiscard} size="md" />
+                  <GameCardTile
+                    card={view.topDiscard}
+                    texture={cardTexture}
+                    size="md"
+                  />
                 ) : (
                   <div className="flex h-24 w-[4.25rem] items-center justify-center rounded-md border border-dashed border-[#FAF7F2]/30 text-xs text-[#E6DED2]/70 sm:h-28 sm:w-20">
                     Empty
@@ -637,6 +670,7 @@ export function SevensTable({
                             <GameCardTile
                               card={card}
                               size="sm"
+                              texture={cardTexture}
                               highlight={card.kind === 'joker'}
                             />
                           </div>
@@ -731,6 +765,7 @@ export function SevensTable({
                     card={card}
                     selected={selectedIds.includes(card.id)}
                     isNewlyDrawn={view.drawnCardId === card.id}
+                    texture={cardTexture}
                     disabled={!isHumanTurn || view.phase === 'DRAW'}
                     onClick={() => toggleCard(card.id)}
                   />

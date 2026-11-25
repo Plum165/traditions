@@ -34,20 +34,35 @@ function buildPlayers(
   config: GameSetupConfig,
   hands: PlayingCard[][]
 ): Player[] {
+  let humanCounter = 0;
+  let botCounter = 0;
+
   return hands.map((hand, idx) => {
-    const isBot = config.mode === 'vs-bots' && idx > 0;
+    const type: PlayerType =
+      config.playerTypes && config.playerTypes[idx]
+        ? config.playerTypes[idx]
+        : config.mode === 'vs-bots' && idx > 0
+          ? 'bot'
+          : 'human';
+
+    if (type === 'bot') {
+      botCounter += 1;
+    } else {
+      humanCounter += 1;
+    }
+
     const defaultName =
-      config.mode === 'vs-bots'
-        ? idx === 0
+      type === 'bot'
+        ? `Bot ${botCounter}`
+        : config.mode === 'vs-bots' && humanCounter === 1 && !config.playerTypes
           ? 'You'
-          : `Bot ${idx}`
-        : `Player ${idx + 1}`;
+          : `Player ${humanCounter}`;
     const customName = config.playerNames?.[idx]?.trim();
 
     return {
       id: `player-${idx + 1}`,
       name: customName || defaultName,
-      type: isBot ? 'bot' : 'human',
+      type,
       hand,
     };
   });
@@ -195,6 +210,10 @@ export function createGame(
     throw new Error('Starting hand size must be 7 or 11 cards.');
   }
 
+  if (config.playerTypes && config.playerTypes.length !== config.playerCount) {
+    throw new Error('Player types length must match playerCount.');
+  }
+
   const rules: SevensRulesConfig = {
     ...DEFAULT_SEVENS_RULES,
     ...config.rules,
@@ -204,14 +223,27 @@ export function createGame(
   const { hands, remainingDeck } = dealHands(shuffled, config.playerCount, config.handSize);
   const players = buildPlayers(config, hands);
 
+  const humanCount = players.filter((p) => p.type === 'human').length;
+  if (humanCount < 1) {
+    throw new Error('At least 1 human player is required.');
+  }
+
+  const effectiveMode = humanCount > 1 ? 'pass-and-play' : config.mode;
+
   const initialDiscard = remainingDeck[0] ? [remainingDeck[0]] : [];
   const drawPile = remainingDeck.slice(initialDiscard.length);
 
   const firstPlayer = players[0];
   const awaitingPassConfirmation =
-    config.mode === 'pass-and-play' && firstPlayer.type === 'human';
+    (effectiveMode === 'pass-and-play' || humanCount > 1) &&
+    firstPlayer.type === 'human';
 
-  const summary = `New ${config.handSize}-card game started with ${config.playerCount} players.`;
+  const botCount = players.length - humanCount;
+  const participantSummary =
+    botCount > 0 && humanCount > 1
+      ? `${humanCount} humans and ${botCount} ${botCount === 1 ? 'bot' : 'bots'}`
+      : `${config.playerCount} players`;
+  const summary = `New ${config.handSize}-card game started with ${participantSummary}.`;
 
   const startFrame = createReplayFrame(
     0,
@@ -228,7 +260,7 @@ export function createGame(
 
   return {
     status: 'PLAYING',
-    mode: config.mode,
+    mode: effectiveMode,
     handSize: config.handSize,
     rules,
     players,
@@ -886,8 +918,9 @@ export function discardCard(state: GameState, cardId: string): MoveResult {
 
   const nextPlayerIndex = (state.currentPlayerIndex + 1) % state.players.length;
   const nextPlayer = state.players[nextPlayerIndex];
+  const humanCount = state.players.filter((p) => p.type === 'human').length;
   const needsPassScreen =
-    state.mode === 'pass-and-play' && nextPlayer.type === 'human';
+    (state.mode === 'pass-and-play' || humanCount > 1) && nextPlayer.type === 'human';
 
   return {
     ok: true,
@@ -908,7 +941,7 @@ export function discardCard(state: GameState, cardId: string): MoveResult {
 
 /**
  * Returns a privacy-safe projection of the game table.
- * Never exposes other players' hands, never exposes drawnCardId when hand is hidden,
+ * Never exposes other players' or bots' private hands, never exposes drawnCardId when hand is hidden,
  * and only unlocks replayFrames once the round is over (GAME_OVER).
  */
 export function getPublicTableView(state: GameState): PublicTableView {
@@ -922,14 +955,17 @@ export function getPublicTableView(state: GameState): PublicTableView {
 
   const currentPlayerSummary = players[state.currentPlayerIndex];
   const activePlayer = state.players[state.currentPlayerIndex];
+  const humanCount = state.players.filter((p) => p.type === 'human').length;
 
   let visibleHand: PlayingCard[] | null = null;
   let drawnCardId: string | null = null;
 
   if (state.status === 'PLAYING' && !state.awaitingPassConfirmation) {
-    if (state.mode === 'pass-and-play') {
-      visibleHand = [...activePlayer.hand];
-      drawnCardId = state.lastDrawnCardId;
+    if (state.mode === 'pass-and-play' || humanCount > 1) {
+      if (activePlayer.type === 'human') {
+        visibleHand = [...activePlayer.hand];
+        drawnCardId = state.lastDrawnCardId;
+      }
     } else {
       const humanPlayer = state.players.find((p) => p.type === 'human');
       visibleHand = humanPlayer ? [...humanPlayer.hand] : null;
@@ -937,7 +973,7 @@ export function getPublicTableView(state: GameState): PublicTableView {
         drawnCardId = state.lastDrawnCardId;
       }
     }
-  } else if (state.status === 'GAME_OVER' && state.mode === 'vs-bots') {
+  } else if (state.status === 'GAME_OVER' && humanCount === 1) {
     const humanPlayer = state.players.find((p) => p.type === 'human');
     visibleHand = humanPlayer ? [...humanPlayer.hand] : null;
   }

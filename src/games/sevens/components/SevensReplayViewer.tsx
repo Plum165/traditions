@@ -9,11 +9,12 @@ import {
   X,
 } from 'lucide-react';
 import { formatCardLabel } from '../engine/deck';
-import type { ReplayActionType, ReplayFrame } from '../engine/types';
+import type { CardTexture, ReplayActionType, ReplayFrame } from '../engine/types';
 import { GameCardTile } from './GameCardTile';
 
 interface SevensReplayViewerProps {
   frames: ReplayFrame[];
+  cardTexture?: CardTexture;
   onClose?: () => void;
 }
 
@@ -28,7 +29,11 @@ const ACTION_LABELS: Record<ReplayActionType, string> = {
   VICTORY: 'Match Won',
 };
 
-export function SevensReplayViewer({ frames, onClose }: SevensReplayViewerProps) {
+export function SevensReplayViewer({
+  frames,
+  cardTexture = 'archival',
+  onClose,
+}: SevensReplayViewerProps) {
   const [stepIndex, setStepIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
 
@@ -278,6 +283,7 @@ export function SevensReplayViewer({ frames, onClose }: SevensReplayViewerProps)
                           <GameCardTile
                             card={card}
                             size="sm"
+                            texture={cardTexture}
                             isNewlyDrawn={isDrawStep && isCardHighlighted}
                             highlight={!isDrawStep && isCardHighlighted}
                           />
@@ -311,6 +317,7 @@ export function SevensReplayViewer({ frames, onClose }: SevensReplayViewerProps)
                 <GameCardTile
                   card={frame.topDiscard}
                   size="sm"
+                  texture={cardTexture}
                   highlight={
                     frame.actionType === 'DISCARD' &&
                     highlightedSet.has(frame.topDiscard.id)
@@ -353,6 +360,7 @@ export function SevensReplayViewer({ frames, onClose }: SevensReplayViewerProps)
                           key={card.id}
                           card={card}
                           size="sm"
+                          texture={cardTexture}
                           highlight={
                             highlightedSet.has(card.id) || card.kind === 'joker'
                           }

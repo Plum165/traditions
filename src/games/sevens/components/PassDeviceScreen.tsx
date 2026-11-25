@@ -33,12 +33,25 @@ export function PassDeviceScreen({ view, onConfirmReady }: PassDeviceScreenProps
         All hands are hidden so the previous player’s cards remain private.
       </p>
 
-      <div className="mt-6 w-full rounded-md border border-[#DDD4C7] bg-[#FAF7F2] px-4 py-3 text-xs text-[#524943]">
-        <p className="font-medium text-[#1E1A18]">Latest update: {view.lastActionSummary}</p>
-        <p className="mt-1 tabular-nums">
+      <div className="mt-6 w-full rounded-md border border-[#DDD4C7] bg-[#FAF7F2] px-4 py-3 text-left text-xs text-[#524943]">
+        <p className="text-center font-medium text-[#1E1A18]">
+          Latest update: {view.lastActionSummary}
+        </p>
+        <p className="mt-1 text-center tabular-nums">
           Table sets: {view.tableSets.length} · Draw pile: {view.drawPileCount} · Discard pile:{' '}
           {view.discardPileCount}
         </p>
+
+        {view.botTurnFeed.length > 0 && (
+          <div className="mt-3 border-t border-[#E6DED2] pt-2.5">
+            <p className="font-semibold text-[#6E4411]">What the bots played before your turn:</p>
+            <ul className="mt-1 space-y-1 text-[#3F3833]">
+              {view.botTurnFeed.slice(-4).map((entry) => (
+                <li key={entry.id}>• {entry.description}</li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
 
       <button

@@ -734,4 +734,58 @@ describe('Drawn Card Tracking, Bot Move Feed, and Post-Game Replay', () => {
   });
 });
 
+describe('Mixed Pass-and-Play with Optional Bots', () => {
+  it('supports 2 humans + 1 bot, triggers pass screens for humans, skips pass screen for bots, and never leaks bot hands', () => {
+    const initial = createGame(
+      {
+        playerCount: 3,
+        handSize: 7,
+        mode: 'pass-and-play',
+        playerTypes: ['human', 'human', 'bot'],
+        playerNames: ['Amina', 'Zain', 'Bot 1'],
+      },
+      createDeterministicRng(77)
+    );
+
+    expect(initial.players.map((p) => ({ name: p.name, type: p.type }))).toEqual([
+      { name: 'Amina', type: 'human' },
+      { name: 'Zain', type: 'human' },
+      { name: 'Bot 1', type: 'bot' },
+    ]);
+    expect(initial.awaitingPassConfirmation).toBe(true);
+    expect(getPublicTableView(initial).visibleHand).toBeNull();
+
+    // Human 1 (Amina) confirms and completes turn
+    const p1Ready = confirmPassDevice(initial).state;
+    const p1Draw = drawFromDeck(p1Ready, createDeterministicRng(77)).state;
+    const p1Discard = discardCard(p1Draw, p1Draw.players[0].hand[0].id).state;
+
+    // Passes to Human 2 (Zain) with pass confirmation active
+    expect(p1Discard.currentPlayerIndex).toBe(1);
+    expect(p1Discard.awaitingPassConfirmation).toBe(true);
+    expect(getPublicTableView(p1Discard).visibleHand).toBeNull();
+
+    // Human 2 (Zain) confirms and completes turn
+    const p2Ready = confirmPassDevice(p1Discard).state;
+    const p2Draw = drawFromDeck(p2Ready, createDeterministicRng(77)).state;
+    const p2Discard = discardCard(p2Draw, p2Draw.players[1].hand[0].id).state;
+
+    // Advances to Bot 1 WITHOUT awaitingPassConfirmation, and hides Bot 1's hand in public view
+    expect(p2Discard.currentPlayerIndex).toBe(2);
+    expect(p2Discard.awaitingPassConfirmation).toBe(false);
+    expect(getPublicTableView(p2Discard).visibleHand).toBeNull();
+
+    // Bot 1 plays full turn and passes back to Human 1 (Amina) with pass screen + botTurnFeed
+    const afterBot = executeFullBotTurn(p2Discard, createDeterministicRng(77));
+    expect(afterBot.currentPlayerIndex).toBe(0);
+    expect(afterBot.awaitingPassConfirmation).toBe(true);
+    expect(afterBot.botTurnFeed.length).toBeGreaterThanOrEqual(2);
+
+    const viewForAminaPass = getPublicTableView(afterBot);
+    expect(viewForAminaPass.visibleHand).toBeNull();
+    expect(viewForAminaPass.botTurnFeed.length).toBeGreaterThanOrEqual(2);
+  });
+});
+
+
 

@@ -44,6 +44,8 @@ export type GameMode = 'pass-and-play' | 'vs-bots';
 
 export type StartingHandSize = 7 | 11;
 
+export type CardTexture = 'archival' | 'classic';
+
 export interface SevensRulesConfig {
   /** Whether a player is allowed to discard a Joker at the end of a turn. */
   allowDiscardJoker: boolean;
@@ -61,6 +63,7 @@ export interface GameSetupConfig {
   playerCount: 2 | 3 | 4;
   handSize: StartingHandSize;
   mode: GameMode;
+  playerTypes?: PlayerType[];
   playerNames?: string[];
   rules?: Partial<SevensRulesConfig>;
 }
