@@ -622,3 +622,116 @@ describe('Persistent Victory Detection and Post-Game Locks', () => {
   });
 });
 
+describe('Drawn Card Tracking, Bot Move Feed, and Post-Game Replay', () => {
+  it('tracks drawnCardId for the active human turn and clears it on play or discard', () => {
+    const initial = createGame(
+      { playerCount: 2, handSize: 7, mode: 'vs-bots' },
+      createDeterministicRng(17)
+    );
+    expect(getPublicTableView(initial).drawnCardId).toBeNull();
+
+    const afterDraw = drawFromDeck(initial, createDeterministicRng(17));
+    expect(afterDraw.ok).toBe(true);
+    const drawnId = afterDraw.state.lastDrawnCardId;
+    expect(drawnId).toBeTruthy();
+    expect(getPublicTableView(afterDraw.state).drawnCardId).toBe(drawnId);
+
+    // Discarding the drawn card clears drawnCardId
+    const afterDiscard = discardCard(afterDraw.state, drawnId!);
+    expect(afterDiscard.ok).toBe(true);
+    expect(afterDiscard.state.lastDrawnCardId).toBeNull();
+    expect(getPublicTableView(afterDiscard.state).drawnCardId).toBeNull();
+  });
+
+  it('hides drawnCardId when Pass-and-Play confirmation is pending', () => {
+    const state = createGame(
+      { playerCount: 2, handSize: 7, mode: 'pass-and-play' },
+      createDeterministicRng(19)
+    );
+    expect(getPublicTableView(state).drawnCardId).toBeNull();
+
+    const confirmed = confirmPassDevice(state).state;
+    const drawn = drawFromDiscard(confirmed);
+    expect(drawn.ok).toBe(true);
+    expect(getPublicTableView(drawn.state).drawnCardId).toBe(drawn.state.lastDrawnCardId);
+  });
+
+  it('records bot moves in botTurnFeed without leaking deck draws and resets on human discard', () => {
+    const base = createGame(
+      { playerCount: 2, handSize: 7, mode: 'vs-bots' },
+      createDeterministicRng(23)
+    );
+    const botTurnState: GameState = {
+      ...base,
+      currentPlayerIndex: 1,
+      phase: 'DRAW',
+      players: [
+        base.players[0],
+        {
+          id: 'player-2',
+          name: 'Bot 1',
+          type: 'bot',
+          hand: [
+            std(9, 'clubs'),
+            std(9, 'diamonds'),
+            std(9, 'hearts'),
+            std(2, 'spades'),
+          ],
+        },
+      ],
+    };
+
+    const afterBot = executeFullBotTurn(botTurnState, createDeterministicRng(23));
+    expect(afterBot.botTurnFeed.length).toBeGreaterThanOrEqual(3);
+    expect(afterBot.botTurnFeed.map((e) => e.actionType)).toContain('PLAY_NEW_SET');
+    expect(afterBot.botTurnFeed.map((e) => e.actionType)).toContain('DISCARD');
+
+    // Deck draws in live bot feed must not reveal the exact drawn card face
+    const deckFeedEntry = afterBot.botTurnFeed.find((e) => e.actionType === 'DRAW_DECK');
+    if (deckFeedEntry) {
+      expect(deckFeedEntry.description).toBe('Bot 1 drew a card from the draw pile.');
+    }
+
+    // Human finishes their turn -> botTurnFeed clears cleanly for the next round
+    const humanDrawn = drawFromDeck(afterBot, createDeterministicRng(23)).state;
+    const humanCard = humanDrawn.players[0].hand.find((c) => c.kind === 'standard')!;
+    const afterHumanDiscard = discardCard(humanDrawn, humanCard.id).state;
+    expect(afterHumanDiscard.botTurnFeed).toEqual([]);
+  });
+
+  it('keeps replayFrames locked during active play and reveals full bot hands once GAME_OVER', () => {
+    const base = createGame(
+      { playerCount: 2, handSize: 7, mode: 'vs-bots' },
+      createDeterministicRng(31)
+    );
+
+    // Locked while PLAYING
+    expect(getPublicTableView(base).replayFrames).toBeNull();
+    expect(base.replayFrames[0].actionType).toBe('START');
+
+    const botNearWin: GameState = {
+      ...base,
+      currentPlayerIndex: 1,
+      phase: 'PLAY',
+      hasDrawnThisTurn: true,
+      players: [
+        { id: 'player-1', name: 'You', type: 'human', hand: [std(4, 'spades'), std(5, 'clubs')] },
+        { id: 'player-2', name: 'Bot 1', type: 'bot', hand: [std(12, 'hearts')] },
+      ],
+    };
+
+    const botWon = executeFullBotTurn(botNearWin, createDeterministicRng(31));
+    expect(botWon.status).toBe('GAME_OVER');
+
+    const unlockedView = getPublicTableView(botWon);
+    expect(unlockedView.replayFrames).not.toBeNull();
+    const frames = unlockedView.replayFrames!;
+    expect(frames[frames.length - 1].actionType).toBe('VICTORY');
+
+    // Replay exposes every bot's hand at each step for post-game review
+    const botSnapshotInStart = frames[0].players.find((p) => p.type === 'bot');
+    expect(botSnapshotInStart?.hand).toHaveLength(7);
+  });
+});
+
+

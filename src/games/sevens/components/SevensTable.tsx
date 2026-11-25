@@ -2,9 +2,11 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   AlertCircle,
+  Bot,
   CheckCircle2,
   ChevronDown,
   Eye,
+  Film,
   Layers,
   Plus,
   RefreshCw,
@@ -12,9 +14,10 @@ import {
   Trophy,
 } from 'lucide-react';
 import { formatCardLabel } from '../engine/deck';
-import type { DrawSource, PublicTableView } from '../engine/types';
+import type { DrawSource, PublicTableView, ReplayActionType } from '../engine/types';
 import { validateNewSet } from '../engine/validation';
 import { GameCardTile } from './GameCardTile';
+import { SevensReplayViewer } from './SevensReplayViewer';
 
 interface SevensTableProps {
   view: PublicTableView;
@@ -36,6 +39,23 @@ const PHASE_LABEL: Record<PublicTableView['phase'], string> = {
   DISCARD: 'Step 3 of 3: Discard 1 Card',
 };
 
+const BOT_PHASE_PROMPT: Record<PublicTableView['phase'], string> = {
+  DRAW: 'Evaluating the top discard card vs. drawing from the deck...',
+  PLAY: 'Scanning hand for matching sets, runs, extensions, or Joker swaps...',
+  DISCARD: 'Selecting a strategic card to discard...',
+};
+
+const BOT_ACTION_TAG: Record<ReplayActionType, string> = {
+  START: 'Start',
+  DRAW_DECK: 'Drew Deck',
+  DRAW_DISCARD: 'Took Discard',
+  PLAY_NEW_SET: 'New Set',
+  ADD_TO_SET: 'Added',
+  REPLACE_JOKER: 'Joker Swap',
+  DISCARD: 'Discarded',
+  VICTORY: 'Won',
+};
+
 export function SevensTable({
   view,
   errorMessage,
@@ -52,12 +72,17 @@ export function SevensTable({
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [victoryDismissed, setVictoryDismissed] = useState(false);
   const [showVictoryDetails, setShowVictoryDetails] = useState(false);
+  const [showReplay, setShowReplay] = useState(false);
 
   const isGameOver = view.status === 'GAME_OVER';
   const isHumanTurn =
     view.status === 'PLAYING' &&
     !view.awaitingPassConfirmation &&
     view.currentPlayer.type === 'human';
+  const isBotTurn =
+    view.status === 'PLAYING' &&
+    !view.awaitingPassConfirmation &&
+    view.currentPlayer.type === 'bot';
 
   const canDrawFromDeck =
     isHumanTurn && view.phase === 'DRAW' && !view.hasDrawnThisTurn && view.drawPileCount > 0;
@@ -70,6 +95,13 @@ export function SevensTable({
     view.topDiscard !== null;
 
   const visibleHand = view.visibleHand ?? [];
+  const drawnCard = useMemo(
+    () =>
+      view.drawnCardId
+        ? visibleHand.find((card) => card.id === view.drawnCardId) ?? null
+        : null,
+    [visibleHand, view.drawnCardId]
+  );
 
   const selectedCards = useMemo(
     () => visibleHand.filter((card) => selectedIds.includes(card.id)),
@@ -147,6 +179,16 @@ export function SevensTable({
               </div>
 
               <div className="flex flex-wrap gap-2">
+                {view.replayFrames && view.replayFrames.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setShowReplay((prev) => !prev)}
+                    className="inline-flex min-h-[44px] items-center gap-1.5 rounded-md border border-[#7C2D36] bg-[#FAF7F2] px-3.5 py-2 text-xs font-semibold text-[#7C2D36] hover:bg-[#EFE8DC]"
+                  >
+                    <Film className="h-4 w-4" aria-hidden="true" />
+                    <span>{showReplay ? 'Hide Match Replay' : 'Watch Match Replay'}</span>
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => setVictoryDismissed(false)}
@@ -157,7 +199,10 @@ export function SevensTable({
                 </button>
                 <button
                   type="button"
-                  onClick={onChangeSetup}
+                  onClick={() => {
+                    setShowReplay(false);
+                    onChangeSetup();
+                  }}
                   className="inline-flex min-h-[44px] items-center justify-center rounded-md bg-[#7C2D36] px-4 py-2 text-xs font-medium text-[#FAF7F2] hover:bg-[#64222A]"
                 >
                   New Game
@@ -257,6 +302,20 @@ export function SevensTable({
 
               {/* Explicit User Navigation Actions */}
               <div className="mt-5 flex flex-col gap-2.5 sm:flex-row sm:flex-wrap">
+                {view.replayFrames && view.replayFrames.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setShowReplay((prev) => !prev)}
+                    className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md border-2 border-[#7C2D36] bg-[#FAF7F2] px-4 py-2.5 text-sm font-semibold text-[#7C2D36] hover:bg-[#EFE8DC]"
+                  >
+                    <Film className="h-4 w-4" aria-hidden="true" />
+                    <span>
+                      {showReplay
+                        ? 'Hide Match Replay'
+                        : 'Watch Match Replay (See Bot Cards)'}
+                    </span>
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => setVictoryDismissed(true)}
@@ -269,6 +328,7 @@ export function SevensTable({
                   onClick={() => {
                     setSelectedIds([]);
                     setVictoryDismissed(false);
+                    setShowReplay(false);
                     onChangeSetup();
                   }}
                   className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md bg-[#7C2D36] px-4 py-2.5 text-sm font-medium text-[#FAF7F2] hover:bg-[#64222A]"
@@ -281,6 +341,7 @@ export function SevensTable({
                   onClick={() => {
                     setSelectedIds([]);
                     setVictoryDismissed(false);
+                    setShowReplay(false);
                     onPlayAgain();
                   }}
                   className="inline-flex min-h-[44px] items-center justify-center rounded-md border border-[#C6B8A6] bg-[#FAF7F2] px-4 py-2.5 text-sm font-medium text-[#1E1A18] hover:bg-[#EFE8DC]"
@@ -297,6 +358,14 @@ export function SevensTable({
             </div>
           )}
         </section>
+      )}
+
+      {/* Post-Game Match Replay Viewer */}
+      {isGameOver && showReplay && view.replayFrames && view.replayFrames.length > 0 && (
+        <SevensReplayViewer
+          frames={view.replayFrames}
+          onClose={() => setShowReplay(false)}
+        />
       )}
 
       {/* Top Status & Player Positions */}
@@ -365,6 +434,76 @@ export function SevensTable({
           })}
         </div>
       </div>
+
+      {/* Bot Move Telegraph / Recent Bot Activity Prompt */}
+      {isBotTurn ? (
+        <section
+          role="status"
+          aria-live="polite"
+          aria-label="Bot Move in Progress"
+          className="rounded-lg border-2 border-[#8A5A19] bg-[#FBF4E7] p-4 text-[#1E1A18] shadow-xs"
+        >
+          <div className="flex items-start gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-[#6E4411] text-[#FAF7F2]">
+              <Bot className="h-5 w-5" aria-hidden="true" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="font-serif text-base font-semibold text-[#1E1A18]">
+                  {view.currentPlayer.name} (Bot) is thinking…
+                </p>
+                <span className="rounded-xs bg-[#6E4411] px-2 py-0.5 font-mono text-[11px] font-semibold text-[#FAF7F2] uppercase">
+                  {view.phase}
+                </span>
+              </div>
+              <p className="mt-1 text-xs font-medium text-[#5A360D] sm:text-sm">
+                {BOT_PHASE_PROMPT[view.phase]}
+              </p>
+              <p className="mt-1.5 text-xs text-[#4A413B] sm:text-sm">
+                Latest update: <span className="font-medium text-[#1E1A18]">{view.lastActionSummary}</span>
+              </p>
+
+              {view.botTurnFeed.length > 0 && (
+                <ul className="mt-2.5 space-y-1 border-t border-[#E6D6BE] pt-2 text-xs text-[#3F3833]">
+                  {view.botTurnFeed.slice(-4).map((entry) => (
+                    <li key={entry.id} className="flex items-start gap-2">
+                      <span className="mt-0.5 shrink-0 rounded-xs bg-[#E6D6BE] px-1.5 py-0.5 font-mono text-[10px] font-semibold text-[#4A2E0B] uppercase">
+                        {BOT_ACTION_TAG[entry.actionType]}
+                      </span>
+                      <span>{entry.description}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        </section>
+      ) : (
+        isHumanTurn &&
+        view.botTurnFeed.length > 0 && (
+          <section
+            aria-label="Recent Bot Moves"
+            className="rounded-lg border border-[#D4C3AA] bg-[#FAF5EC] p-3.5 text-[#1E1A18] sm:p-4"
+          >
+            <div className="flex items-center gap-2">
+              <Bot className="h-4 w-4 shrink-0 text-[#6E4411]" aria-hidden="true" />
+              <h3 className="font-serif text-sm font-semibold text-[#1E1A18] sm:text-base">
+                What the Bots Just Played
+              </h3>
+            </div>
+            <ul className="mt-2 space-y-1.5 text-xs text-[#3F3833] sm:text-sm">
+              {view.botTurnFeed.map((entry) => (
+                <li key={entry.id} className="flex flex-wrap items-baseline gap-2">
+                  <span className="shrink-0 rounded-xs bg-[#EAE0D0] px-1.5 py-0.5 font-mono text-[10px] font-semibold text-[#4A2E0B] uppercase">
+                    {BOT_ACTION_TAG[entry.actionType]}
+                  </span>
+                  <span>{entry.description}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )
+      )}
 
       {/* Live Action / Error Banner */}
       <div
@@ -560,7 +699,11 @@ export function SevensTable({
                     ? `${view.currentPlayer.name} is taking their turn...`
                     : view.phase === 'DRAW'
                       ? 'Choose Draw or Take Discard above to start your turn.'
-                      : 'Tap cards to select. Swipe hand sideways if needed on small screens.'}
+                      : drawnCard
+                        ? `Newly drawn card (shaded green): ${formatCardLabel(
+                            drawnCard
+                          )} · Tap cards to select.`
+                        : 'Tap cards to select. Swipe hand sideways if needed on small screens.'}
               </p>
             </div>
 
@@ -581,12 +724,13 @@ export function SevensTable({
               Hand is empty (0 cards left).
             </p>
           ) : (
-            <div className="mt-3 flex flex-nowrap gap-2.5 overflow-x-auto px-1 pt-3 pb-3 sm:flex-wrap sm:gap-3 sm:overflow-visible">
+            <div className="mt-3 flex flex-nowrap gap-2.5 overflow-x-auto px-1 pt-3 pb-4 sm:flex-wrap sm:gap-3 sm:overflow-visible">
               {visibleHand.map((card) => (
                 <div key={card.id} className="shrink-0">
                   <GameCardTile
                     card={card}
                     selected={selectedIds.includes(card.id)}
+                    isNewlyDrawn={view.drawnCardId === card.id}
                     disabled={!isHumanTurn || view.phase === 'DRAW'}
                     onClick={() => toggleCard(card.id)}
                   />

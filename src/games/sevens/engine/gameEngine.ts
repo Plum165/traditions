@@ -1,13 +1,17 @@
 import { createDeck, dealHands, formatCardLabel, shuffleDeck, sortHand } from './deck';
 import type {
+  BotFeedEntry,
   DrawSource,
   GameSetupConfig,
   GameState,
   MoveResult,
   Player,
   PlayerStanding,
+  PlayerType,
   PlayingCard,
   PublicTableView,
+  ReplayActionType,
+  ReplayFrame,
   SevensRulesConfig,
   TableSet,
 } from './types';
@@ -53,6 +57,67 @@ function appendLog(log: readonly string[], entry: string): string[] {
   return [entry, ...log].slice(0, 30);
 }
 
+function createReplayFrame(
+  stepIndex: number,
+  turnNumber: number,
+  actor: { id: string | null; name: string; type: PlayerType | 'system' },
+  actionType: ReplayActionType,
+  description: string,
+  highlightedCardIds: readonly string[],
+  players: readonly Player[],
+  tableSets: readonly TableSet[],
+  discardPile: readonly PlayingCard[],
+  drawPile: readonly PlayingCard[]
+): ReplayFrame {
+  return {
+    stepIndex,
+    turnNumber,
+    actorId: actor.id,
+    actorName: actor.name,
+    actorType: actor.type,
+    actionType,
+    description,
+    highlightedCardIds: [...highlightedCardIds],
+    players: players.map((p) => ({
+      id: p.id,
+      name: p.name,
+      type: p.type,
+      hand: [...p.hand],
+    })),
+    tableSets: tableSets.map((s) => ({
+      ...s,
+      cards: [...s.cards],
+    })),
+    topDiscard:
+      discardPile.length > 0 ? discardPile[discardPile.length - 1] : null,
+    drawPileCount: drawPile.length,
+  };
+}
+
+function recordBotFeed(
+  existingFeed: readonly BotFeedEntry[],
+  player: Player,
+  turnNumber: number,
+  actionType: ReplayActionType,
+  description: string
+): BotFeedEntry[] {
+  if (player.type !== 'bot') {
+    return [...existingFeed];
+  }
+
+  return [
+    ...existingFeed,
+    {
+      id: `bot-feed-${turnNumber}-${existingFeed.length + 1}`,
+      turnNumber,
+      botId: player.id,
+      botName: player.name,
+      actionType,
+      description,
+    },
+  ].slice(-12);
+}
+
 function computeStandings(
   players: readonly Player[],
   winnerId: string
@@ -92,6 +157,19 @@ export function detectAndApplyVictory(state: GameState): GameState {
       ? `Game Over! ${winningPlayer.name} (Bot) has won!`
       : `Congratulations! ${winningPlayer.name} won Sevens!`;
 
+  const victoryFrame = createReplayFrame(
+    state.replayFrames.length,
+    state.turnNumber,
+    { id: winningPlayer.id, name: winningPlayer.name, type: winningPlayer.type },
+    'VICTORY',
+    summary,
+    [],
+    state.players,
+    state.tableSets,
+    state.discardPile,
+    state.drawPile
+  );
+
   return {
     ...state,
     status: 'GAME_OVER',
@@ -99,8 +177,10 @@ export function detectAndApplyVictory(state: GameState): GameState {
     winnerType: winningPlayer.type,
     standings: computeStandings(state.players, winningPlayer.id),
     awaitingPassConfirmation: false,
+    lastDrawnCardId: null,
     lastActionSummary: summary,
     actionLog: appendLog(state.actionLog, summary),
+    replayFrames: [...state.replayFrames, victoryFrame],
   };
 }
 
@@ -133,6 +213,19 @@ export function createGame(
 
   const summary = `New ${config.handSize}-card game started with ${config.playerCount} players.`;
 
+  const startFrame = createReplayFrame(
+    0,
+    1,
+    { id: null, name: 'Deal', type: 'system' },
+    'START',
+    summary,
+    [],
+    players,
+    [],
+    initialDiscard,
+    drawPile
+  );
+
   return {
     status: 'PLAYING',
     mode: config.mode,
@@ -147,6 +240,7 @@ export function createGame(
     turnNumber: 1,
     hasDrawnThisTurn: false,
     lastDrawSource: null,
+    lastDrawnCardId: null,
     hasCreatedNewSetThisTurn: false,
     retrievedJokerIdsThisTurn: [],
     awaitingPassConfirmation,
@@ -154,7 +248,9 @@ export function createGame(
     winnerType: null,
     standings: [],
     lastActionSummary: summary,
+    botTurnFeed: [],
     actionLog: [summary],
+    replayFrames: [startFrame],
   };
 }
 
@@ -247,10 +343,23 @@ export function drawFromDeck(
       : p
   );
 
-  const summary =
-    activePlayer.type === 'human' && state.mode === 'pass-and-play'
-      ? `${activePlayer.name} drew a card from the draw pile.`
-      : `${activePlayer.name} drew a card from the draw pile.`;
+  const publicSummary = `${activePlayer.name} drew a card from the draw pile.`;
+  const replayDescription = `${activePlayer.name} drew ${formatCardLabel(
+    drawn
+  )} from the draw pile.`;
+
+  const nextFrame = createReplayFrame(
+    state.replayFrames.length,
+    state.turnNumber,
+    { id: activePlayer.id, name: activePlayer.name, type: activePlayer.type },
+    'DRAW_DECK',
+    replayDescription,
+    [drawn.id],
+    updatedPlayers,
+    state.tableSets,
+    discardPile,
+    nextDrawPile
+  );
 
   return {
     ok: true,
@@ -262,8 +371,17 @@ export function drawFromDeck(
       phase: 'PLAY',
       hasDrawnThisTurn: true,
       lastDrawSource: 'draw-pile',
-      lastActionSummary: summary,
-      actionLog: appendLog(state.actionLog, summary),
+      lastDrawnCardId: drawn.id,
+      lastActionSummary: publicSummary,
+      botTurnFeed: recordBotFeed(
+        state.botTurnFeed,
+        activePlayer,
+        state.turnNumber,
+        'DRAW_DECK',
+        publicSummary
+      ),
+      actionLog: appendLog(state.actionLog, publicSummary),
+      replayFrames: [...state.replayFrames, nextFrame],
     },
   };
 }
@@ -304,6 +422,19 @@ export function drawFromDiscard(state: GameState): MoveResult {
 
   const summary = `${activePlayer.name} took ${formatCardLabel(drawn)} from the discard pile.`;
 
+  const nextFrame = createReplayFrame(
+    state.replayFrames.length,
+    state.turnNumber,
+    { id: activePlayer.id, name: activePlayer.name, type: activePlayer.type },
+    'DRAW_DISCARD',
+    summary,
+    [drawn.id],
+    updatedPlayers,
+    state.tableSets,
+    nextDiscard,
+    state.drawPile
+  );
+
   return {
     ok: true,
     state: {
@@ -313,8 +444,17 @@ export function drawFromDiscard(state: GameState): MoveResult {
       phase: 'PLAY',
       hasDrawnThisTurn: true,
       lastDrawSource: 'discard-pile',
+      lastDrawnCardId: drawn.id,
       lastActionSummary: summary,
+      botTurnFeed: recordBotFeed(
+        state.botTurnFeed,
+        activePlayer,
+        state.turnNumber,
+        'DRAW_DISCARD',
+        summary
+      ),
       actionLog: appendLog(state.actionLog, summary),
+      replayFrames: [...state.replayFrames, nextFrame],
     },
   };
 }
@@ -415,19 +555,44 @@ export function playNewSet(state: GameState, cardIds: readonly string[]): MoveRe
       ? { ...p, hand: p.hand.filter((c) => !selectedSet.has(c.id)) }
       : p
   );
+  const updatedTableSets = [...state.tableSets, newSet];
 
   const label = validation.orderedCards.map(formatCardLabel).join(', ');
   const summary = `${activePlayer.name} played a new ${
     validation.setType === 'matching' ? 'matching set' : 'consecutive run'
   }: ${label}.`;
 
+  const nextFrame = createReplayFrame(
+    state.replayFrames.length,
+    state.turnNumber,
+    { id: activePlayer.id, name: activePlayer.name, type: activePlayer.type },
+    'PLAY_NEW_SET',
+    summary,
+    cardIds,
+    updatedPlayers,
+    updatedTableSets,
+    state.discardPile,
+    state.drawPile
+  );
+
   const nextState = detectAndApplyVictory({
     ...state,
     players: updatedPlayers,
-    tableSets: [...state.tableSets, newSet],
+    tableSets: updatedTableSets,
     hasCreatedNewSetThisTurn: true,
+    lastDrawnCardId: selectedSet.has(state.lastDrawnCardId ?? '')
+      ? null
+      : state.lastDrawnCardId,
     lastActionSummary: summary,
+    botTurnFeed: recordBotFeed(
+      state.botTurnFeed,
+      activePlayer,
+      state.turnNumber,
+      'PLAY_NEW_SET',
+      summary
+    ),
     actionLog: appendLog(state.actionLog, summary),
+    replayFrames: [...state.replayFrames, nextFrame],
   });
 
   return { ok: true, state: nextState };
@@ -503,12 +668,36 @@ export function addCardsToSet(
     targetSet.type === 'matching' ? 'matching set' : 'run'
   }.`;
 
+  const nextFrame = createReplayFrame(
+    state.replayFrames.length,
+    state.turnNumber,
+    { id: activePlayer.id, name: activePlayer.name, type: activePlayer.type },
+    'ADD_TO_SET',
+    summary,
+    cardIds,
+    updatedPlayers,
+    updatedTableSets,
+    state.discardPile,
+    state.drawPile
+  );
+
   const nextState = detectAndApplyVictory({
     ...state,
     players: updatedPlayers,
     tableSets: updatedTableSets,
+    lastDrawnCardId: selectedSet.has(state.lastDrawnCardId ?? '')
+      ? null
+      : state.lastDrawnCardId,
     lastActionSummary: summary,
+    botTurnFeed: recordBotFeed(
+      state.botTurnFeed,
+      activePlayer,
+      state.turnNumber,
+      'ADD_TO_SET',
+      summary
+    ),
     actionLog: appendLog(state.actionLog, summary),
+    replayFrames: [...state.replayFrames, nextFrame],
   });
 
   return { ok: true, state: nextState };
@@ -566,18 +755,41 @@ export function replaceJokerInSet(
     card
   )} and retrieved ${formatCardLabel(replacement.retrievedJoker)}.`;
 
+  const nextFrame = createReplayFrame(
+    state.replayFrames.length,
+    state.turnNumber,
+    { id: activePlayer.id, name: activePlayer.name, type: activePlayer.type },
+    'REPLACE_JOKER',
+    summary,
+    [cardId, replacement.retrievedJoker.id],
+    updatedPlayers,
+    updatedTableSets,
+    state.discardPile,
+    state.drawPile
+  );
+
   return {
     ok: true,
     state: {
       ...state,
       players: updatedPlayers,
       tableSets: updatedTableSets,
+      lastDrawnCardId:
+        state.lastDrawnCardId === cardId ? null : state.lastDrawnCardId,
       retrievedJokerIdsThisTurn: [
         ...state.retrievedJokerIdsThisTurn,
         replacement.retrievedJoker.id,
       ],
       lastActionSummary: summary,
+      botTurnFeed: recordBotFeed(
+        state.botTurnFeed,
+        activePlayer,
+        state.turnNumber,
+        'REPLACE_JOKER',
+        summary
+      ),
       actionLog: appendLog(state.actionLog, summary),
+      replayFrames: [...state.replayFrames, nextFrame],
     },
   };
 }
@@ -629,12 +841,40 @@ export function discardCard(state: GameState, cardId: string): MoveResult {
   const nextDiscardPile = [...state.discardPile, card];
   const summary = `${activePlayer.name} discarded ${formatCardLabel(card)}.`;
 
+  const discardFrame = createReplayFrame(
+    state.replayFrames.length,
+    state.turnNumber,
+    { id: activePlayer.id, name: activePlayer.name, type: activePlayer.type },
+    'DISCARD',
+    summary,
+    [card.id],
+    updatedPlayers,
+    state.tableSets,
+    nextDiscardPile,
+    state.drawPile
+  );
+
+  // When a human finishes their turn, clear older bot feed so upcoming bot turns start fresh
+  const nextBotFeed =
+    activePlayer.type === 'human'
+      ? []
+      : recordBotFeed(
+          state.botTurnFeed,
+          activePlayer,
+          state.turnNumber,
+          'DISCARD',
+          summary
+        );
+
   const stateAfterDiscard: GameState = {
     ...state,
     players: updatedPlayers,
     discardPile: nextDiscardPile,
+    lastDrawnCardId: null,
     lastActionSummary: summary,
+    botTurnFeed: nextBotFeed,
     actionLog: appendLog(state.actionLog, summary),
+    replayFrames: [...state.replayFrames, discardFrame],
   };
 
   if (nextHand.length === 0) {
@@ -658,6 +898,7 @@ export function discardCard(state: GameState, cardId: string): MoveResult {
       turnNumber: state.turnNumber + 1,
       hasDrawnThisTurn: false,
       lastDrawSource: null,
+      lastDrawnCardId: null,
       hasCreatedNewSetThisTurn: false,
       retrievedJokerIdsThisTurn: [],
       awaitingPassConfirmation: needsPassScreen,
@@ -667,7 +908,8 @@ export function discardCard(state: GameState, cardId: string): MoveResult {
 
 /**
  * Returns a privacy-safe projection of the game table.
- * Never exposes other players' hands or the active player's hand while Pass-and-Play confirmation is pending.
+ * Never exposes other players' hands, never exposes drawnCardId when hand is hidden,
+ * and only unlocks replayFrames once the round is over (GAME_OVER).
  */
 export function getPublicTableView(state: GameState): PublicTableView {
   const players = state.players.map((p, idx) => ({
@@ -682,12 +924,18 @@ export function getPublicTableView(state: GameState): PublicTableView {
   const activePlayer = state.players[state.currentPlayerIndex];
 
   let visibleHand: PlayingCard[] | null = null;
+  let drawnCardId: string | null = null;
+
   if (state.status === 'PLAYING' && !state.awaitingPassConfirmation) {
     if (state.mode === 'pass-and-play') {
       visibleHand = [...activePlayer.hand];
+      drawnCardId = state.lastDrawnCardId;
     } else {
       const humanPlayer = state.players.find((p) => p.type === 'human');
       visibleHand = humanPlayer ? [...humanPlayer.hand] : null;
+      if (activePlayer.type === 'human') {
+        drawnCardId = state.lastDrawnCardId;
+      }
     }
   } else if (state.status === 'GAME_OVER' && state.mode === 'vs-bots') {
     const humanPlayer = state.players.find((p) => p.type === 'human');
@@ -705,6 +953,7 @@ export function getPublicTableView(state: GameState): PublicTableView {
     turnNumber: state.turnNumber,
     hasDrawnThisTurn: state.hasDrawnThisTurn,
     lastDrawSource: state.lastDrawSource,
+    drawnCardId,
     hasCreatedNewSetThisTurn: state.hasCreatedNewSetThisTurn,
     awaitingPassConfirmation: state.awaitingPassConfirmation,
     currentPlayer: currentPlayerSummary,
@@ -721,6 +970,8 @@ export function getPublicTableView(state: GameState): PublicTableView {
     winnerType: state.winnerType,
     standings: state.standings,
     lastActionSummary: state.lastActionSummary,
+    botTurnFeed: state.botTurnFeed,
     actionLog: state.actionLog,
+    replayFrames: state.status === 'GAME_OVER' ? state.replayFrames : null,
   };
 }

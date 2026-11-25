@@ -74,6 +74,47 @@ export interface PlayerStanding {
   isWinner: boolean;
 }
 
+export type ReplayActionType =
+  | 'START'
+  | 'DRAW_DECK'
+  | 'DRAW_DISCARD'
+  | 'PLAY_NEW_SET'
+  | 'ADD_TO_SET'
+  | 'REPLACE_JOKER'
+  | 'DISCARD'
+  | 'VICTORY';
+
+export interface ReplayPlayerSnapshot {
+  id: string;
+  name: string;
+  type: PlayerType;
+  hand: PlayingCard[];
+}
+
+export interface ReplayFrame {
+  stepIndex: number;
+  turnNumber: number;
+  actorId: string | null;
+  actorName: string;
+  actorType: PlayerType | 'system';
+  actionType: ReplayActionType;
+  description: string;
+  highlightedCardIds: string[];
+  players: ReplayPlayerSnapshot[];
+  tableSets: TableSet[];
+  topDiscard: PlayingCard | null;
+  drawPileCount: number;
+}
+
+export interface BotFeedEntry {
+  id: string;
+  turnNumber: number;
+  botId: string;
+  botName: string;
+  actionType: ReplayActionType;
+  description: string;
+}
+
 export interface GameState {
   status: 'PLAYING' | 'GAME_OVER';
   mode: GameMode;
@@ -88,6 +129,7 @@ export interface GameState {
   turnNumber: number;
   hasDrawnThisTurn: boolean;
   lastDrawSource: DrawSource | null;
+  lastDrawnCardId: string | null;
   hasCreatedNewSetThisTurn: boolean;
   retrievedJokerIdsThisTurn: string[];
   awaitingPassConfirmation: boolean;
@@ -95,7 +137,9 @@ export interface GameState {
   winnerType: PlayerType | null;
   standings: PlayerStanding[];
   lastActionSummary: string;
+  botTurnFeed: BotFeedEntry[];
   actionLog: string[];
+  replayFrames: ReplayFrame[];
 }
 
 export interface ValidationResult {
@@ -126,6 +170,7 @@ export interface PublicTableView {
   turnNumber: number;
   hasDrawnThisTurn: boolean;
   lastDrawSource: DrawSource | null;
+  drawnCardId: string | null;
   hasCreatedNewSetThisTurn: boolean;
   awaitingPassConfirmation: boolean;
   currentPlayer: PublicPlayerSummary;
@@ -139,5 +184,7 @@ export interface PublicTableView {
   winnerType: PlayerType | null;
   standings: PlayerStanding[];
   lastActionSummary: string;
+  botTurnFeed: BotFeedEntry[];
   actionLog: string[];
+  replayFrames: ReplayFrame[] | null;
 }

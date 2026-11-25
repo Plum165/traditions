@@ -58,7 +58,7 @@ The architecture follows three core engineering principles:
 │   ├── games/
 │   │   └── sevens/
 │   │       ├── README.md          # Game engine & configurable rules docs
-│   │       ├── components/        # GameCardTile, SevensSetupPanel, PassDeviceScreen, SevensTable
+│   │       ├── components/        # GameCardTile, SevensSetupPanel, PassDeviceScreen, SevensTable, SevensReplayViewer
 │   │       ├── engine/            # Pure deck, validation, state machine, bot, and Vitest suite
 │   │       └── tutorial/          # 7-lesson tutorial data and practice cards
 │   ├── pages/
@@ -87,10 +87,10 @@ The architecture follows three core engineering principles:
 
 ## 4. Sevens Engine & Interactive Architecture
 
-- **Pure State Transitions (`src/games/sevens/engine/gameEngine.ts`)**: All actions (`drawFromDeck`, `drawFromDiscard`, `playNewSet`, `addCardsToSet`, `replaceJokerInSet`, `discardCard`, `confirmPassDevice`) return immutable `MoveResult` objects and reject illegal actions without modifying state.
-- **Centralized Victory Detection (`detectAndApplyVictory`)**: Identifies human or bot winners identically, computes `standings`, locks post-game mutations, and preserves the complete table state in `SevensTable` without forced redirects.
-- **Privacy Projection (`getPublicTableView`)**: In Pass-and-Play mode, `awaitingPassConfirmation` sets `visibleHand` to `null` until the incoming player explicitly confirms **I'm Ready** on `PassDeviceScreen`. In Bot mode, bot hands are never exposed in `visibleHand`.
-- **Deterministic Bot Strategy (`src/games/sevens/engine/bot.ts`)**: Bots inspect only their own hand and public table state, evaluate beneficial top-discard pickups, prioritise Matching Sets over Consecutive Runs, enforce at most one new set per turn, replace Jokers when holding the missing card, extend existing sets, and discard low-utility cards.
+- **Pure State Transitions (`src/games/sevens/engine/gameEngine.ts`)**: All actions (`drawFromDeck`, `drawFromDiscard`, `playNewSet`, `addCardsToSet`, `replaceJokerInSet`, `discardCard`, `confirmPassDevice`) return immutable `MoveResult` objects, track `lastDrawnCardId`, record `botTurnFeed` telegraph entries, and append `ReplayFrame` snapshots for every step.
+- **Centralized Victory Detection (`detectAndApplyVictory`)**: Identifies human or bot winners identically, computes `standings`, locks post-game mutations, and preserves the complete table state in `SevensTable` without forced redirects while unlocking post-game replay (`SevensReplayViewer`).
+- **Privacy Projection (`getPublicTableView`)**: In Pass-and-Play mode, `awaitingPassConfirmation` sets `visibleHand` and `drawnCardId` to `null` until the incoming player explicitly confirms **I'm Ready** on `PassDeviceScreen`. In Bot mode, bot hands are never exposed in `visibleHand`, and `replayFrames` remain `null` until `status === 'GAME_OVER'`.
+- **Deterministic Bot Strategy & Telegraphing (`src/games/sevens/engine/bot.ts`)**: Bots inspect only their own hand and public table state, evaluate beneficial top-discard pickups, prioritise Matching Sets over Consecutive Runs, enforce at most one new set per turn, replace Jokers when holding the missing card, extend existing sets, and discard low-utility cards. Bot actions are telegraphed in real time via `botTurnFeed` and live phase prompts without leaking face-down deck draws.
 - **Configurable Unresolved Rules (`SevensRulesConfig`)**: Edge-case questions from `sevens.ts` (`allowDiscardJoker`, `allowImmediateJokerReuse`, `allowDiscardPickupTop`, `requireFinalDiscard`, `allowExtendJokerSets`) are exposed as setup toggles rather than silently invented as universal rules.
 
 ---

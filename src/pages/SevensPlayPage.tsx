@@ -56,7 +56,7 @@ export function SevensPlayPage() {
         if (!action) return prev;
         return applyBotAction(prev, action);
       });
-    }, 650);
+    }, 900);
 
     return () => window.clearTimeout(timerId);
   }, [gameState]);
