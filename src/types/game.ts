@@ -113,6 +113,15 @@ export interface GameSeoMetadata {
   description: string;
 }
 
+export interface GameInteractiveExperiences {
+  learnPath?: string;
+  learnLabel?: string;
+  playPath?: string;
+  playLabel?: string;
+  rulesAnchorId?: string;
+  rulesLabel?: string;
+}
+
 export interface Game {
   id: string;
   slug: string;
@@ -139,6 +148,7 @@ export interface Game {
   unconfirmedQuestions?: string[];
   culturalNotes?: CulturalNote[];
   relatedGames?: string[];
+  interactiveExperiences?: GameInteractiveExperiences;
   lastUpdated: string;
   seo?: GameSeoMetadata;
 }

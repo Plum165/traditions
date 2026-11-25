@@ -20,7 +20,15 @@ export const sevensGame: Game = {
   },
   status: 'published',
   featured: true,
-  playerCount: 'Unconfirmed limits (typically small to medium table groups)',
+  interactiveExperiences: {
+    learnPath: '/games/sevens/learn',
+    learnLabel: 'Learn to Play',
+    playPath: '/games/sevens/play',
+    playLabel: 'Play Sevens',
+    rulesAnchorId: 'objective',
+    rulesLabel: 'Read Full Rules',
+  },
+  playerCount: '2–4 players (configurable in interactive game; exact traditional limits unconfirmed)',
   equipment: [
     'Standard 52-card playing deck',
     '2 Jokers (54 cards total)',

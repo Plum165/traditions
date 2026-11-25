@@ -101,6 +101,35 @@ export function GameDetailsTemplate({ game }: GameDetailsTemplateProps) {
                 <p className="mt-4 max-w-xl text-base leading-relaxed text-[#3F3833] sm:text-lg">
                   {game.description}
                 </p>
+
+                {game.interactiveExperiences && (
+                  <div className="mt-6 flex flex-wrap items-center gap-3">
+                    {game.interactiveExperiences.playPath && (
+                      <Link
+                        to={game.interactiveExperiences.playPath}
+                        className="inline-flex min-h-[44px] items-center justify-center rounded-md bg-[#7C2D36] px-5 py-2.5 text-sm font-medium text-[#FAF7F2] whitespace-nowrap shrink-0 transition-colors hover:bg-[#64222A]"
+                      >
+                        {game.interactiveExperiences.playLabel ?? `Play ${game.name}`}
+                      </Link>
+                    )}
+                    {game.interactiveExperiences.learnPath && (
+                      <Link
+                        to={game.interactiveExperiences.learnPath}
+                        className="inline-flex min-h-[44px] items-center justify-center rounded-md border border-[#B9AA98] bg-[#FAF7F2] px-5 py-2.5 text-sm font-medium text-[#1E1A18] whitespace-nowrap shrink-0 transition-colors hover:bg-[#EFE8DC]"
+                      >
+                        {game.interactiveExperiences.learnLabel ?? 'Learn to Play'}
+                      </Link>
+                    )}
+                    {game.interactiveExperiences.rulesAnchorId && (
+                      <a
+                        href={`#${game.interactiveExperiences.rulesAnchorId}`}
+                        className="inline-flex min-h-[44px] items-center justify-center px-3 py-2 text-sm font-medium text-[#7C2D36] underline underline-offset-4 whitespace-nowrap shrink-0 hover:text-[#5B1E25]"
+                      >
+                        {game.interactiveExperiences.rulesLabel ?? 'Read Full Rules'}
+                      </a>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Accession Metadata Definition List */}

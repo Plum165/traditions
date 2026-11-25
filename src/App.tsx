@@ -12,6 +12,16 @@ const GamesLibraryPage = lazy(() =>
 const GamePage = lazy(() =>
   import('./pages/GamePage').then((mod) => ({ default: mod.GamePage }))
 );
+const SevensTutorialPage = lazy(() =>
+  import('./pages/SevensTutorialPage').then((mod) => ({
+    default: mod.SevensTutorialPage,
+  }))
+);
+const SevensPlayPage = lazy(() =>
+  import('./pages/SevensPlayPage').then((mod) => ({
+    default: mod.SevensPlayPage,
+  }))
+);
 const AboutPage = lazy(() =>
   import('./pages/AboutPage').then((mod) => ({ default: mod.AboutPage }))
 );
@@ -39,6 +49,8 @@ export default function App() {
             <Route element={<Layout />}>
               <Route path="/" element={<HomePage />} />
               <Route path="/games" element={<GamesLibraryPage />} />
+              <Route path="/games/sevens/learn" element={<SevensTutorialPage />} />
+              <Route path="/games/sevens/play" element={<SevensPlayPage />} />
               <Route path="/games/:slug" element={<GamePage />} />
               <Route path="/about" element={<AboutPage />} />
               <Route path="/contribute" element={<ContributePage />} />
