@@ -7,7 +7,7 @@
 The architecture follows three core engineering principles:
 
 1. **Separation of Content and Presentation**: Game rules, variations, and cultural notes live in strongly typed structured data modules (`src/content/games/`), completely decoupled from React UI components.
-2. **Separation of Game Engine and UI**: Interactive gameplay logic (`src/games/sevens/engine/`, `src/games/porridge/engine/`, `src/games/redOrBlack/engine/`) is written as pure, immutable, deterministic TypeScript modules independent of React components and covered by automated unit tests (`vitest`).
+2. **Separation of Game Engine and UI**: Interactive gameplay logic (`src/games/sevens/engine/`, `src/games/porridge/engine/`, `src/games/redOrBlack/engine/`, `src/games/goFish/engine/`) is written as pure, immutable, deterministic TypeScript modules independent of React components and covered by automated unit tests (`vitest`).
 3. **Template-Driven Scalability & CMS Readiness**: Every game entry renders dynamically through `GameDetailsTemplate`, and data access is abstracted behind `GameRepository` (`src/types/game.ts`).
 
 ---
@@ -18,11 +18,11 @@ The architecture follows three core engineering principles:
 | :--- | :--- | :--- |
 | Framework | React 19 + TypeScript | Component architecture and static type safety |
 | Build Tool | Vite 8 | Fast bundling and route-based code splitting |
-| Routing | React Router DOM 7 | Client-side navigation (`/`, `/games`, `/games/:slug`, `/games/sevens/learn`, `/games/sevens/play`, `/games/porridge/play`, `/games/red-or-black/play`, `/about`, `/contribute`) |
+| Routing | React Router DOM 7 | Client-side navigation (`/`, `/games`, `/games/:slug`, `/games/sevens/learn`, `/games/sevens/play`, `/games/porridge/play`, `/games/red-or-black/play`, `/games/go-fish/play`, `/about`, `/contribute`) |
 | Styling | Tailwind CSS v4 | Mobile-first responsive styling and archival design tokens |
 | Icons | Lucide React | Accessible affordance icons |
 | Animation | Motion (`motion/react`) | Subtle compositor-only transitions respecting `prefers-reduced-motion` |
-| Testing | Vitest 5 | Automated unit tests for Sevens engine, Porridge engine, Red or Black engine, and archive registry |
+| Testing | Vitest 5 | Automated unit tests for Sevens engine, Porridge engine, Red or Black engine, Go Fish engine, and archive registry |
 | Hosting | Vercel (compatible) | Static SPA deployment with `vercel.json` fallback rewrites |
 
 ---
@@ -64,6 +64,10 @@ The architecture follows three core engineering principles:
 │   │       ├── redOrBlack.ts      # Red or Black (The Four Questions) documentation
 │   │       └── sevens.ts          # Sevens baseline documentation
 │   ├── games/
+│   │   ├── goFish/
+│   │   │   ├── README.md          # Go Fish engine, book collection, bot memory & strategy docs
+│   │   │   ├── components/        # GoFishSetupPanel, GoFishPassDeviceScreen, GoFishVictory, FishPond, PlayerStatus, PlayerHand, OpponentSelector, RankSelector, RequestConfirmation, GameNotification, BookCollection, GoFishTable
+│   │   │   └── engine/            # Pure 52-card deck, deal, hand/book/draw managers, requestValidator/Resolver, botMemory, Easy/Normal/Hard botStrategy, turnManager, scoring, and Vitest suite
 │   │   ├── porridge/
 │   │   │   ├── README.md          # Porridge engine, circle rules & configurable options docs
 │   │   │   ├── components/        # PorridgeCircle, CircleCard, CentralPorridgePile, PlayerStatus, PorridgePassDeviceScreen, PorridgeVictory, PorridgeSetupPanel, PorridgeTable
@@ -82,6 +86,7 @@ The architecture follows three core engineering principles:
 │   │   ├── ContributePage.tsx
 │   │   ├── GamePage.tsx
 │   │   ├── GamesLibraryPage.tsx
+│   │   ├── GoFishPlayPage.tsx
 │   │   ├── HomePage.tsx
 │   │   ├── NotFoundPage.tsx
 │   │   ├── PorridgePlayPage.tsx
@@ -128,6 +133,11 @@ The architecture follows three core engineering principles:
 - **Shared Multiplayer Setup & Privacy (`MultiplayerSetupForm`, `SharedPassDeviceScreen`, `SharedVictoryPanel`)**: Reuses the shared 2–4 player setup component (`vs-bots`, `pass-and-play`, `mixed`), seat validation (`validateMultiplayerSeats`), full-screen Pass-and-Play privacy handover screen, and in-game victory standings panel alongside Porridge.
 - **Variants & Dual-Role Turn Rotation (`turnManager.ts`, `gameEngine.ts`)**: Maintains distinct `askerIndex` (Questioner / Deck Holder) and `answererIndex` (Answering Player) IDs across 2, 3, and 4 players in Clockwise or Anticlockwise direction for both **Four Questions Challenge** and **Card Collection House Rule**.
 - **Shared Validation & Fair AI Difficulties (`validation.ts`, `botStrategy.ts`)**: Both humans and bots evaluate guesses through `evaluatePrediction`. Bots (`easy` random, `normal` baseline probability, `hard` remaining-deck card counting) operate strictly on public revealed-card history without ever accessing `drawPile`.
+
+### Go Fish (`src/games/goFish/`)
+- **Shared Multiplayer & Private Hands (`getPublicGoFishView`, `GoFishPassDeviceScreen`)**: Reuses `MultiplayerSetupForm`, `SharedPassDeviceScreen`, `SharedVictoryPanel`, and `GameCardTile`. Private hands and non-matching drawn cards remain hidden during Pass-and-Play handovers and multi-human bot turns.
+- **Book Collection, Refills & Stalemate (`bookManager.ts`, `drawManager.ts`, `scoring.ts`)**: Automatically extracts 4-of-a-kind books on initial deal, transfers, pond draws, and refills; refills empty hands up to 5 cards (or remaining pond, or 1-card house rule); marks empty-hand players inactive for asking when the Fish Pond is empty; and resolves 13-book victories, ties, and empty-pond round stalemates.
+- **Public Memory & Fair Bot Intelligence (`botMemory.ts`, `botStrategy.ts`)**: `createBotObservation` omits opponent hands and `drawPile`. Easy bots pick randomly from legal options; Normal bots track public request/denial memory and prefer multi-card ranks; Hard bots combine public rank conservation, evidence decay/invalidation, book-completion urgency, and opponent hand sizes.
 
 ---
 

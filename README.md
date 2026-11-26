@@ -14,6 +14,7 @@ A mobile-first digital cultural archive dedicated to documenting and preserving 
   - **Play Sevens** (`/games/sevens/play`) — Mobile-first playable 2–4 player Sevens supporting Draw Pile or top Discard Pile drawing, differentiated shading for newly drawn cards, selectable **Everyday Classic** (multi-pip) or **Archival Minimal** card textures, live bot move telegraphing, 7-card and 11-card hands, Pass and Play with optional bot opponents and turn-privacy screens, deterministic bots, persistent on-table victory standings, post-game step-by-step match replay revealing bots' cards, and configurable unresolved house rules.
   - **Play Porridge (Sekaku)** (`/games/porridge/play`) — Interactive 52-card circular game supporting Play Against Bots, Pass and Play with full-screen privacy handovers, Mixed Human + Bot tables, custom turn-order/sequence layout, immediate single-tap card reveal, Same-Suit and Highest-Colour rule variations, configurable Ace ranking, and persistent in-game victory standings.
   - **Play Red or Black** (`/games/red-or-black/play`) — Interactive 2–4 player Four Questions Challenge & Card Collection House Rule game reusing shared multiplayer setup, Pass and Play privacy handovers, Mixed Human + Bot seats, Easy/Normal/Hard AI bots, distinct Questioner vs Answering Player tracking, and in-game victory standings.
+  - **Play Go Fish** (`/games/go-fish/play`) — Interactive 2–4 player 52-card Go Fish reusing shared multiplayer setup, Pass and Play privacy handovers, Mixed Human + Bot seats, Easy/Normal/Hard memory-and-probability AI bots, automatic four-card book collection, empty-hand refills, stalemate detection, and in-game victory standings.
 - **Core Routes**:
   - `/` – Archive homepage and introduction
   - `/games` – Searchable, category-filtered Games Library
@@ -22,6 +23,7 @@ A mobile-first digital cultural archive dedicated to documenting and preserving 
   - `/games/sevens/play` – Playable Sevens card game
   - `/games/porridge/play` – Playable Porridge (Sekaku) card game
   - `/games/red-or-black/play` – Playable Red or Black (The Four Questions) card game
+  - `/games/go-fish/play` – Playable Go Fish card game
   - `/about` – Project purpose and cultural preservation principles
   - `/contribute` – How visitors can contribute games, corrections, variations, and memories
 

@@ -267,6 +267,12 @@ export const goFishGame: Game = {
     },
   ],
   relatedGames: ['sevens', 'porridge', 'red-or-black'],
+  interactiveExperiences: {
+    playPath: '/games/go-fish/play',
+    playLabel: 'Play Go Fish',
+    rulesAnchorId: 'how-to-play',
+    rulesLabel: 'Read Full Rules',
+  },
   lastUpdated: '2026-11-26',
   seo: {
     title: 'Go Fish Card Game Rules & Variations – Our Childhood Archive',

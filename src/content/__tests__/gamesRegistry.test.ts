@@ -52,6 +52,7 @@ describe('Archive Games Registry', () => {
     expect(goFish?.alternativeNames).toContain('Fish Pond');
     expect(goFish?.variations).toHaveLength(5);
     expect(goFish?.coverImage.isIllustrative).toBe(true);
+    expect(goFish?.interactiveExperiences?.playPath).toBe('/games/go-fish/play');
 
     const aliasResults = searchGames('fish pond', 'Card Games');
     expect(aliasResults.map((g) => g.slug)).toEqual(['go-fish']);
