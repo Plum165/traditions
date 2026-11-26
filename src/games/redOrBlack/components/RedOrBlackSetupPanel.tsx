@@ -66,82 +66,98 @@ export function RedOrBlackSetupPanel({
       cardTexture={cardTexture}
       onChangeCardTexture={onChangeCardTexture}
       showBotDifficulty={true}
-      extraSettingsTitle="Card Ranking, Bot Pace & Experience Options"
+      extraSettingsTitle="Bot Pace & Experience Options"
       gameOptionsSlot={
-        <fieldset>
-          <legend className="text-sm font-semibold text-[#1E1A18]">
-            Game Variant
-          </legend>
-          <div className="mt-2.5 grid gap-3 sm:grid-cols-2">
-            <button
-              type="button"
-              onClick={() => setVariant('four-questions')}
-              aria-pressed={variant === 'four-questions'}
-              className={`flex min-h-[72px] flex-col items-start rounded-md border p-4 text-left transition-colors ${
-                variant === 'four-questions'
-                  ? 'border-[#7C2D36] bg-[#F4EFE7] ring-1 ring-[#7C2D36]'
-                  : 'border-[#DDD4C7] bg-[#FAF7F2] hover:bg-[#F4EFE7]/60'
-              }`}
-            >
-              <span className="font-serif text-base font-semibold text-[#1E1A18]">
-                Four Questions Challenge
-              </span>
-              <span className="mt-1 text-xs leading-relaxed text-[#524943]">
-                Answer Colour, Higher/Lower, Inside/Outside, and Suit in order. First player to complete all four wins.
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setVariant('card-collection')}
-              aria-pressed={variant === 'card-collection'}
-              className={`flex min-h-[72px] flex-col items-start rounded-md border p-4 text-left transition-colors ${
-                variant === 'card-collection'
-                  ? 'border-[#7C2D36] bg-[#F4EFE7] ring-1 ring-[#7C2D36]'
-                  : 'border-[#DDD4C7] bg-[#FAF7F2] hover:bg-[#F4EFE7]/60'
-              }`}
-            >
-              <span className="font-serif text-base font-semibold text-[#1E1A18]">
-                Card Collection House Rule
-              </span>
-              <span className="mt-1 text-xs leading-relaxed text-[#524943]">
-                Correct answers award cards to the answerer and reset to Question 1; misses award cards to the asker and pass the deck.
-              </span>
-            </button>
-          </div>
-        </fieldset>
-      }
-      extraSettingsSlot={
-        <>
-          <div>
-            <p className="text-xs font-semibold text-[#1E1A18]">Card Ranking (Ace)</p>
-            <div className="mt-2 grid grid-cols-2 gap-2">
+        <div className="space-y-6">
+          <fieldset>
+            <legend className="text-sm font-semibold text-[#1E1A18]">
+              Game Variant
+            </legend>
+            <div className="mt-2.5 grid gap-3 sm:grid-cols-2">
               <button
                 type="button"
-                onClick={() => setRules((r) => ({ ...r, aceRanking: 'ace-high' }))}
-                aria-pressed={rules.aceRanking === 'ace-high'}
-                className={`min-h-[44px] rounded border px-3 py-1.5 text-xs font-medium ${
-                  rules.aceRanking === 'ace-high'
-                    ? 'border-[#7C2D36] bg-[#7C2D36] text-[#FAF7F2]'
-                    : 'border-[#C6B8A6] bg-[#FAF7F2] text-[#1E1A18]'
+                onClick={() => setVariant('four-questions')}
+                aria-pressed={variant === 'four-questions'}
+                className={`flex min-h-[72px] flex-col items-start rounded-md border p-4 text-left transition-colors ${
+                  variant === 'four-questions'
+                    ? 'border-[#7C2D36] bg-[#F4EFE7] ring-1 ring-[#7C2D36]'
+                    : 'border-[#DDD4C7] bg-[#FAF7F2] hover:bg-[#F4EFE7]/60'
                 }`}
               >
-                Ace High (14 · Default)
+                <span className="font-serif text-base font-semibold text-[#1E1A18]">
+                  Four Questions Challenge
+                </span>
+                <span className="mt-1 text-xs leading-relaxed text-[#524943]">
+                  Answer Colour, Higher/Lower, Inside/Outside, and Suit in order. First player to complete all four wins.
+                </span>
               </button>
+
+              <button
+                type="button"
+                onClick={() => setVariant('card-collection')}
+                aria-pressed={variant === 'card-collection'}
+                className={`flex min-h-[72px] flex-col items-start rounded-md border p-4 text-left transition-colors ${
+                  variant === 'card-collection'
+                    ? 'border-[#7C2D36] bg-[#F4EFE7] ring-1 ring-[#7C2D36]'
+                    : 'border-[#DDD4C7] bg-[#FAF7F2] hover:bg-[#F4EFE7]/60'
+                }`}
+              >
+                <span className="font-serif text-base font-semibold text-[#1E1A18]">
+                  Card Collection House Rule
+                </span>
+                <span className="mt-1 text-xs leading-relaxed text-[#524943]">
+                  Correct answers award cards to the answerer and reset to Question 1; misses award cards to the asker and pass the deck.
+                </span>
+              </button>
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend className="text-sm font-semibold text-[#1E1A18]">
+              Ace Value (Card Ranking)
+            </legend>
+            <div className="mt-2.5 grid gap-3 sm:grid-cols-2">
               <button
                 type="button"
                 onClick={() => setRules((r) => ({ ...r, aceRanking: 'ace-low' }))}
                 aria-pressed={rules.aceRanking === 'ace-low'}
-                className={`min-h-[44px] rounded border px-3 py-1.5 text-xs font-medium ${
+                className={`flex min-h-[60px] flex-col items-start rounded-md border p-3.5 text-left transition-colors ${
                   rules.aceRanking === 'ace-low'
-                    ? 'border-[#7C2D36] bg-[#7C2D36] text-[#FAF7F2]'
-                    : 'border-[#C6B8A6] bg-[#FAF7F2] text-[#1E1A18]'
+                    ? 'border-[#7C2D36] bg-[#F4EFE7] ring-1 ring-[#7C2D36]'
+                    : 'border-[#DDD4C7] bg-[#FAF7F2] hover:bg-[#F4EFE7]/60'
                 }`}
               >
-                Ace Low (1)
+                <span className="font-serif text-base font-semibold text-[#1E1A18]">
+                  Ace = 1 (Lowest · Default)
+                </span>
+                <span className="mt-1 text-xs text-[#524943]">
+                  Order: A (1), 2, 3 … 10, J (11), Q (12), K (13).
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setRules((r) => ({ ...r, aceRanking: 'ace-high' }))}
+                aria-pressed={rules.aceRanking === 'ace-high'}
+                className={`flex min-h-[60px] flex-col items-start rounded-md border p-3.5 text-left transition-colors ${
+                  rules.aceRanking === 'ace-high'
+                    ? 'border-[#7C2D36] bg-[#F4EFE7] ring-1 ring-[#7C2D36]'
+                    : 'border-[#DDD4C7] bg-[#FAF7F2] hover:bg-[#F4EFE7]/60'
+                }`}
+              >
+                <span className="font-serif text-base font-semibold text-[#1E1A18]">
+                  Ace = 14 (Highest Value)
+                </span>
+                <span className="mt-1 text-xs text-[#524943]">
+                  Order: 2, 3 … 10, J (11), Q (12), K (13), A (14).
+                </span>
               </button>
             </div>
-          </div>
+          </fieldset>
+        </div>
+      }
+      extraSettingsSlot={
+        <>
 
           <div>
             <p className="text-xs font-semibold text-[#1E1A18]">Bot Thinking Delay</p>

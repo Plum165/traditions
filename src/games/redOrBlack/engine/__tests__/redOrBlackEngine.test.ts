@@ -78,6 +78,8 @@ describe('Red or Black – Deck & Multiplayer Setup Validation', () => {
       ]).valid
     ).toBe(false);
 
+    expect(DEFAULT_RED_OR_BLACK_RULES.aceRanking).toBe('ace-low');
+
     expect(
       validateMultiplayerSeats([
         { id: 'seat-1', type: 'human', name: 'Ali', difficulty: 'normal' },

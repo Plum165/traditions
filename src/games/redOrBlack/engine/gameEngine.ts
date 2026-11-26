@@ -28,7 +28,7 @@ import type {
 import { evaluatePrediction } from './validation';
 
 export const DEFAULT_RED_OR_BLACK_RULES: RedOrBlackRulesConfig = {
-  aceRanking: 'ace-high',
+  aceRanking: 'ace-low',
   botThinkingDelayMs: 850,
   soundEnabled: true,
   animationsEnabled: true,

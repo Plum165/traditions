@@ -56,14 +56,14 @@ export const redOrBlackGame: Game = {
     },
     {
       type: 'table',
-      caption: 'Initial card value ranking (Ace treated as highest by default)',
+      caption: 'Card value ranking (Ace = 1 by default, or 14 as highest value)',
       headers: ['Card', 'Value'],
       rows: [
+        ['Ace (A)', '1 (default lowest) or 14 (highest; selectable before starting)'],
         ['2–10', 'Face value (2–10)'],
         ['Jack (J)', '11'],
         ['Queen (Q)', '12'],
         ['King (K)', '13'],
-        ['Ace (A)', '14 (highest; adjustable per household)'],
       ],
     },
     {

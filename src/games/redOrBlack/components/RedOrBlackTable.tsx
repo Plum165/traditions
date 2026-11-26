@@ -324,8 +324,8 @@ export function RedOrBlackTable({
                 {view.asker.name} holds the deck
               </p>
               <p className="mt-1 tabular-nums">
-                Revealed so far: {view.knownRevealedCount} cards · Ace{' '}
-                {view.rules.aceRanking === 'ace-high' ? 'High (14)' : 'Low (1)'}
+                Revealed so far: {view.knownRevealedCount} cards · Ace ={' '}
+                {view.rules.aceRanking === 'ace-high' ? '14 (Highest)' : '1 (Lowest)'}
               </p>
               {isFourQuestions ? (
                 <p className="mt-1">
