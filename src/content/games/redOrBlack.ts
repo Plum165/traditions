@@ -295,7 +295,7 @@ export const redOrBlackGame: Game = {
       verification: 'community-recollection',
     },
   ],
-  relatedGames: ['sevens', 'porridge'],
+  relatedGames: ['sevens', 'porridge', 'go-fish'],
   interactiveExperiences: {
     playPath: '/games/red-or-black/play',
     playLabel: 'Play Red or Black',

@@ -7,9 +7,14 @@ import {
 } from '../games';
 
 describe('Archive Games Registry', () => {
-  it('publishes Sevens (OC-001), Porridge / Sekaku (OC-002), and Red or Black (OC-003)', () => {
-    expect(PUBLISHED_GAMES.map((g) => g.slug)).toEqual(['sevens', 'porridge', 'red-or-black']);
-    expect(getActiveCategories()).toEqual([{ category: 'Card Games', count: 3 }]);
+  it('publishes Sevens (OC-001), Porridge / Sekaku (OC-002), Red or Black (OC-003), and Go Fish (OC-004)', () => {
+    expect(PUBLISHED_GAMES.map((g) => g.slug)).toEqual([
+      'sevens',
+      'porridge',
+      'red-or-black',
+      'go-fish',
+    ]);
+    expect(getActiveCategories()).toEqual([{ category: 'Card Games', count: 4 }]);
   });
 
   it('resolves Porridge (Sekaku) by slug and alias search', () => {
@@ -38,6 +43,18 @@ describe('Archive Games Registry', () => {
 
     const aliasResults = searchGames('the four questions', 'Card Games');
     expect(aliasResults.map((g) => g.slug)).toEqual(['red-or-black']);
+  });
+
+  it('resolves Go Fish by slug and alias search', () => {
+    const goFish = getGameBySlug('go-fish');
+    expect(goFish).toBeDefined();
+    expect(goFish?.accessionCode).toBe('OC-004');
+    expect(goFish?.alternativeNames).toContain('Fish Pond');
+    expect(goFish?.variations).toHaveLength(5);
+    expect(goFish?.coverImage.isIllustrative).toBe(true);
+
+    const aliasResults = searchGames('fish pond', 'Card Games');
+    expect(aliasResults.map((g) => g.slug)).toEqual(['go-fish']);
   });
 
   it('ensures every published game has required archival metadata', () => {

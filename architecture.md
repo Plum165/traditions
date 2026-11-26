@@ -58,6 +58,7 @@ The architecture follows three core engineering principles:
 │   │   ├── README.md              # Guide to authoring new games
 │   │   ├── __tests__/             # Registry & archival schema Vitest suite
 │   │   └── games/
+│   │       ├── goFish.ts          # Go Fish documentation
 │   │       ├── index.ts           # Central game registry & query helpers
 │   │       ├── porridge.ts        # Porridge (Sekaku) documentation
 │   │       ├── redOrBlack.ts      # Red or Black (The Four Questions) documentation
