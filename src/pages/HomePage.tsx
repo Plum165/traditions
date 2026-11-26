@@ -12,14 +12,14 @@ import { GameCard } from '../components/games/GameCard';
 
 export function HomePage() {
   const featuredGames = getFeaturedGames();
-  const recentGames = getRecentGames(4);
+  const recentGames = getRecentGames(5);
   const activeCategories = getActiveCategories();
 
   return (
     <>
       <DocumentHead
         title="Our Childhood – Digital Cultural Games Archive"
-        description="Preserving Coloured childhood games, house rules, and neighbourhood traditions. Explore documented rules for Sevens, Porridge (Sekaku), Red or Black, and Go Fish, and contribute family memories."
+        description="Preserving Coloured childhood games, house rules, and neighbourhood traditions. Explore documented rules for Sevens, Porridge (Sekaku), Red or Black, Go Fish, and OMO, and contribute family memories."
         structuredData={{
           '@context': 'https://schema.org',
           '@type': 'WebSite',
@@ -123,8 +123,8 @@ export function HomePage() {
                 03. Built to Grow Carefully
               </h3>
               <p className="mt-2 text-sm leading-relaxed text-[#4A413B]">
-                Each game—including Sevens, Porridge (Sekaku), Red or Black, and Go Fish—is added
-                only after real community rules, variations, and open questions are documented
+                Each game—including Sevens, Porridge (Sekaku), Red or Black, Go Fish, and OMO—is
+                added only after real community rules, variations, and open questions are documented
                 honestly.
               </p>
             </div>
@@ -168,8 +168,9 @@ export function HomePage() {
                 The archive currently documents{' '}
                 <strong className="font-medium text-[#1E1A18]">Sevens</strong> (OC-001),{' '}
                 <strong className="font-medium text-[#1E1A18]">Porridge / Sekaku</strong> (OC-002),{' '}
-                <strong className="font-medium text-[#1E1A18]">Red or Black</strong> (OC-003), and{' '}
-                <strong className="font-medium text-[#1E1A18]">Go Fish</strong> (OC-004).
+                <strong className="font-medium text-[#1E1A18]">Red or Black</strong> (OC-003),{' '}
+                <strong className="font-medium text-[#1E1A18]">Go Fish</strong> (OC-004), and{' '}
+                <strong className="font-medium text-[#1E1A18]">OMO</strong> (OC-005).
                 Rather than filling the library with invented entries, each game is published only
                 after its rules, variations, and unresolved edge cases are carefully recorded.
               </p>
@@ -221,8 +222,8 @@ export function HomePage() {
               </ul>
 
               <p className="mt-4 text-xs leading-relaxed text-[#6B6059]">
-                Future categories—including Street Games, Playground Games, Board Games, and
-                Outdoor Activities—will open as soon as verified entries are added.
+                Future categories—including Street Games, Playground Games, and Outdoor
+                Activities—will open as soon as verified entries are added.
               </p>
             </div>
 
@@ -289,7 +290,7 @@ export function HomePage() {
               </h2>
               <p className="mt-2.5 text-base leading-relaxed text-[#3F3833]">
                 Know a childhood game that belongs here, remember another variation of Sevens,
-                Porridge (Sekaku), Red or Black, or Go Fish, or can confirm one of the open
+                Porridge (Sekaku), Red or Black, Go Fish, or OMO, or can confirm one of the open
                 house-rule questions? Read how contributions are documented and reviewed.
               </p>
             </div>

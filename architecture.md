@@ -60,6 +60,7 @@ The architecture follows three core engineering principles:
 │   │   └── games/
 │   │       ├── goFish.ts          # Go Fish documentation
 │   │       ├── index.ts           # Central game registry & query helpers
+│   │       ├── omo.ts             # OMO grid word-building documentation
 │   │       ├── porridge.ts        # Porridge (Sekaku) documentation
 │   │       ├── redOrBlack.ts      # Red or Black (The Four Questions) documentation
 │   │       └── sevens.ts          # Sevens baseline documentation

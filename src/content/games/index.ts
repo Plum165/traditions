@@ -1,5 +1,6 @@
 import type { Game, GameCategory, GameRepository } from '../../types/game';
 import { goFishGame } from './goFish';
+import { omoGame } from './omo';
 import { porridgeGame } from './porridge';
 import { redOrBlackGame } from './redOrBlack';
 import { sevensGame } from './sevens';
@@ -13,6 +14,7 @@ export const ALL_GAMES: Game[] = [
   porridgeGame,
   redOrBlackGame,
   goFishGame,
+  omoGame,
 ];
 
 export const PUBLISHED_GAMES: Game[] = ALL_GAMES.filter(

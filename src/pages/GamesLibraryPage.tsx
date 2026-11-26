@@ -45,7 +45,7 @@ export function GamesLibraryPage() {
     <>
       <DocumentHead
         title="Games Library – Our Childhood Archive"
-        description="Browse documented Coloured childhood games including Sevens, Porridge (Sekaku), Red or Black, and Go Fish, filter by category, and explore verified rules and variations."
+        description="Browse documented Coloured childhood games including Sevens, Porridge (Sekaku), Red or Black, Go Fish, and OMO, filter by category, and explore verified rules and variations."
         structuredData={{
           '@context': 'https://schema.org',
           '@type': 'CollectionPage',
@@ -67,9 +67,10 @@ export function GamesLibraryPage() {
             Explore documented childhood games, rules, and household variations—including{' '}
             <strong className="font-medium text-[#1E1A18]">Sevens</strong>,{' '}
             <strong className="font-medium text-[#1E1A18]">Porridge (Sekaku)</strong>,{' '}
-            <strong className="font-medium text-[#1E1A18]">Red or Black</strong>, and{' '}
-            <strong className="font-medium text-[#1E1A18]">Go Fish</strong>—with more entries added
-            as community rules are verified and published.
+            <strong className="font-medium text-[#1E1A18]">Red or Black</strong>,{' '}
+            <strong className="font-medium text-[#1E1A18]">Go Fish</strong>, and{' '}
+            <strong className="font-medium text-[#1E1A18]">OMO</strong>—with more entries added as
+            community rules are verified and published.
           </p>
 
           {/* Search and Category Controls */}

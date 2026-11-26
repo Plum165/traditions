@@ -266,7 +266,7 @@ export const goFishGame: Game = {
       verification: 'community-recollection',
     },
   ],
-  relatedGames: ['sevens', 'porridge', 'red-or-black'],
+  relatedGames: ['sevens', 'porridge', 'red-or-black', 'omo'],
   interactiveExperiences: {
     playPath: '/games/go-fish/play',
     playLabel: 'Play Go Fish',

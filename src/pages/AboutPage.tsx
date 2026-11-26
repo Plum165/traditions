@@ -105,12 +105,16 @@ export function AboutPage() {
               <Link to="/games/red-or-black" className="font-medium text-[#7C2D36] underline underline-offset-4">
                 Red or Black
               </Link>
-              , and{' '}
+              ,{' '}
               <Link to="/games/go-fish" className="font-medium text-[#7C2D36] underline underline-offset-4">
                 Go Fish
               </Link>
-              . Every addition uses a shared template supporting card games, street games,
-              playground games, and group traditions.
+              , and{' '}
+              <Link to="/games/omo" className="font-medium text-[#7C2D36] underline underline-offset-4">
+                OMO
+              </Link>
+              . Every addition uses a shared template supporting card games, board games, street
+              games, playground games, and group traditions.
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
               <Link

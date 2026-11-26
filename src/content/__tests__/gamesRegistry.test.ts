@@ -7,14 +7,18 @@ import {
 } from '../games';
 
 describe('Archive Games Registry', () => {
-  it('publishes Sevens (OC-001), Porridge / Sekaku (OC-002), Red or Black (OC-003), and Go Fish (OC-004)', () => {
+  it('publishes Sevens (OC-001), Porridge / Sekaku (OC-002), Red or Black (OC-003), Go Fish (OC-004), and OMO (OC-005)', () => {
     expect(PUBLISHED_GAMES.map((g) => g.slug)).toEqual([
       'sevens',
       'porridge',
       'red-or-black',
       'go-fish',
+      'omo',
     ]);
-    expect(getActiveCategories()).toEqual([{ category: 'Card Games', count: 4 }]);
+    expect(getActiveCategories()).toEqual([
+      { category: 'Card Games', count: 4 },
+      { category: 'Board Games', count: 1 },
+    ]);
   });
 
   it('resolves Porridge (Sekaku) by slug and alias search', () => {
@@ -56,6 +60,18 @@ describe('Archive Games Registry', () => {
 
     const aliasResults = searchGames('fish pond', 'Card Games');
     expect(aliasResults.map((g) => g.slug)).toEqual(['go-fish']);
+  });
+
+  it('resolves OMO (OC-005) by slug and Board Games category search', () => {
+    const omo = getGameBySlug('omo');
+    expect(omo).toBeDefined();
+    expect(omo?.accessionCode).toBe('OC-005');
+    expect(omo?.category).toBe('Board Games');
+    expect(omo?.coverImage.isIllustrative).toBe(true);
+    expect(omo?.sections.length).toBeGreaterThanOrEqual(6);
+
+    const searchResults = searchGames('omo', 'Board Games');
+    expect(searchResults.map((g) => g.slug)).toEqual(['omo']);
   });
 
   it('ensures every published game has required archival metadata', () => {
