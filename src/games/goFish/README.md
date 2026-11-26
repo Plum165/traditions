@@ -10,7 +10,7 @@ Pure, deterministic TypeScript rules engine for **Go Fish** (`src/games/goFish/`
 - `engine/handManager.ts` — Immutable hand addition/removal and available rank extraction.
 - `engine/bookManager.ts` — Automatic 4-of-a-kind book detection and extraction from player hands.
 - `engine/requestValidator.ts` — Shared request validation enforcing held-rank checks, non-self requests, active turn checks, and eligible opponents.
-- `engine/drawManager.ts` — Single-card Fish Pond drawing and automatic empty-hand refills (up to 5 cards or remaining pond, or 1-card house rule).
+- `engine/drawManager.ts` — Single-card Fish Pond drawing, automatic empty-hand refills (up to 5 cards or remaining pond, or 1-card house rule), and per-player newly drawn card tracking (`lastDrawnCardsByPlayer`).
 - `engine/scoring.ts` — Book totals, 13-book victory check, empty-pond stalemate round detection, and tie-aware standings.
 - `engine/turnManager.ts` — Clockwise/anticlockwise turn rotation, empty-hand skip handling, and Pass-and-Play privacy confirmation.
 - `engine/botMemory.ts` — Public event memory (`successfulRequests`, `failedRequests`, `knownBookCollections`) and restricted `BotObservation` builder that never exposes hidden hands or the undealt Fish Pond.

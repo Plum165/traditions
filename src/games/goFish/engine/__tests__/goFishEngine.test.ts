@@ -256,6 +256,22 @@ describe('Go Fish Engine', () => {
       expect(missRes.state.currentPlayerIndex).toBe(1);
       expect(missRes.state.players[0].hand).toHaveLength(3);
       expect(missRes.state.drawPile).toHaveLength(1);
+
+      // Even after turn advances to bot, human p1 still sees which card they were forced to pick up
+      const viewWhileBotActs = getPublicGoFishView(missRes.state);
+      expect(viewWhileBotActs.newlyDrawnCardIds).toEqual(['diamonds-12']);
+      expect(viewWhileBotActs.lastPickedUpCards.map((c) => c.id)).toEqual([
+        'diamonds-12',
+      ]);
+
+      // Bot misses -> returns to human p1 -> human p1 STILL sees diamonds-12 highlighted until their next request
+      const botMiss = resolveRequest(missRes.state, 'p2', 'p1', 6);
+      expect(botMiss.ok).toBe(true);
+      const viewBackToHuman = getPublicGoFishView(botMiss.state);
+      expect(viewBackToHuman.newlyDrawnCardIds).toEqual(['diamonds-12']);
+      expect(viewBackToHuman.lastPickedUpCards.map((c) => c.id)).toEqual([
+        'diamonds-12',
+      ]);
     });
 
     it('handles empty draw pile safely and refills empty hands up to 5 cards (or remaining pond)', () => {

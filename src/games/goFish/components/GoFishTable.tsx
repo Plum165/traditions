@@ -287,7 +287,8 @@ export function GoFishTable({
           }
           hand={view.visibleHand}
           selectedRank={isHumanTurn ? selectedRank : null}
-          newlyDrawnCardId={view.newlyDrawnCardId}
+          newlyDrawnCardIds={view.newlyDrawnCardIds}
+          lastPickedUpCards={view.lastPickedUpCards}
           canInteract={isHumanTurn && !submitting}
           cardTexture={cardTexture}
           onSelectRank={(rank) =>

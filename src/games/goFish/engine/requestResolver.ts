@@ -115,6 +115,10 @@ export function resolveRequest(
   let newlyDrawnCardId: string | null = null;
   let completedBooksForMemory: { playerId: string; rank: CardRank }[] = [];
   let nextStalePlayerIds = [...state.stalePlayerIds];
+  const nextDrawnCardsByPlayer: Record<string, typeof state.drawPile> = {
+    ...state.lastDrawnCardsByPlayer,
+    [requester.id]: [],
+  };
 
   const { removed: matchingCards, remaining: opponentRemaining } =
     removeRankFromHand(opponent.hand, rank);
@@ -147,6 +151,13 @@ export function resolveRequest(
     );
     const updatedOpponent = oppRefill.player;
     workingDrawPile = oppRefill.drawPile;
+
+    if (reqRefill.refilledCards.length > 0) {
+      nextDrawnCardsByPlayer[requester.id] = reqRefill.refilledCards;
+    }
+    if (oppRefill.refilledCards.length > 0) {
+      nextDrawnCardsByPlayer[opponent.id] = oppRefill.refilledCards;
+    }
 
     workingPlayers[requesterIndex] = updatedRequester;
     workingPlayers[opponentIndex] = updatedOpponent;
@@ -261,6 +272,11 @@ export function resolveRequest(
       );
       updatedRequester = reqRefill.player;
       workingDrawPile = reqRefill.drawPile;
+
+      nextDrawnCardsByPlayer[requester.id] = [
+        drawnCard,
+        ...reqRefill.refilledCards,
+      ];
 
       workingPlayers[requesterIndex] = updatedRequester;
 
@@ -382,6 +398,7 @@ export function resolveRequest(
     memory: nextMemory,
     stalePlayerIds: nextStalePlayerIds,
     newlyDrawnCardId,
+    lastDrawnCardsByPlayer: nextDrawnCardsByPlayer,
     lastOutcome: outcome,
     outcomeHistory: [outcome, ...state.outcomeHistory].slice(0, 60),
     lastActionSummary: outcome.publicMessage,
@@ -525,13 +542,32 @@ export function getPublicGoFishView(state: GoFishGameState): PublicGoFishView {
   //   and hide hands during bot turns so no previous human's hand lingers on screen.
   // - In solo vs-bots (1 human), keep that 1 human's hand visible even while bots take turns.
   let visibleHand: GoFishGameState['players'][number]['hand'] | null = null;
+  let visibleOwnerId: string | null = null;
   if (!state.awaitingPassConfirmation && state.status !== 'GAME_OVER') {
     if (currentPlayerFull.type === 'human') {
       visibleHand = currentPlayerFull.hand;
+      visibleOwnerId = currentPlayerFull.id;
     } else if (humanPlayers.length === 1) {
       visibleHand = humanPlayers[0].hand;
+      visibleOwnerId = humanPlayers[0].id;
     }
   }
+
+  const visibleHandIds = new Set((visibleHand ?? []).map((c) => c.id));
+  const rawPickedUpCards =
+    visibleOwnerId !== null
+      ? state.lastDrawnCardsByPlayer[visibleOwnerId] ?? []
+      : [];
+  const lastPickedUpCards = visibleHand
+    ? rawPickedUpCards.filter((c) => visibleHandIds.has(c.id))
+    : [];
+  const newlyDrawnCardIds = lastPickedUpCards.map((c) => c.id);
+  const resolvedNewlyDrawnCardId =
+    visibleHand &&
+    state.newlyDrawnCardId &&
+    visibleHandIds.has(state.newlyDrawnCardId)
+      ? state.newlyDrawnCardId
+      : newlyDrawnCardIds[0] ?? null;
 
   const availableRanks =
     visibleHand && currentPlayerFull.type === 'human' && !state.pendingTurnAdvance
@@ -589,7 +625,9 @@ export function getPublicGoFishView(state: GoFishGameState): PublicGoFishView {
     visibleHand,
     availableRanks,
     eligibleOpponents,
-    newlyDrawnCardId: visibleHand ? state.newlyDrawnCardId : null,
+    newlyDrawnCardId: resolvedNewlyDrawnCardId,
+    newlyDrawnCardIds,
+    lastPickedUpCards,
     drawPileCount: state.drawPile.length,
     totalBooksCompleted: getTotalCompletedBooks(state.players),
     turnNumber: state.turnNumber,

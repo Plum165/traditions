@@ -127,6 +127,15 @@ export function GoFishPlayPage() {
       return;
     }
 
+    const humanPlayers = gameState.players.filter((p) => p.type === 'human');
+    const soleHumanJustDrew =
+      humanPlayers.length === 1 &&
+      gameState.lastOutcome?.requesterId === humanPlayers[0].id &&
+      (gameState.lastOutcome.kind === 'go-fish-miss' ||
+        gameState.lastOutcome.refilledCount > 0);
+    const effectiveDelayMs =
+      gameState.rules.botThinkingDelayMs + (soleHumanJustDrew ? 950 : 0);
+
     const timerId = window.setTimeout(() => {
       setGameState((prev) => {
         if (
@@ -144,7 +153,7 @@ export function GoFishPlayPage() {
         }
         return res.state;
       });
-    }, gameState.rules.botThinkingDelayMs);
+    }, effectiveDelayMs);
 
     return () => window.clearTimeout(timerId);
   }, [gameState]);

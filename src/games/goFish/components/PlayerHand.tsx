@@ -5,13 +5,14 @@ import type {
   CardTexture,
   StandardCard,
 } from '../../../types/playingCard';
-import { formatRankPlural } from '../engine/deck';
+import { formatCardLabel, formatRankPlural } from '../engine/deck';
 
 interface PlayerHandProps {
   playerName: string;
   hand: StandardCard[];
   selectedRank: CardRank | null;
-  newlyDrawnCardId: string | null;
+  newlyDrawnCardIds: string[];
+  lastPickedUpCards: StandardCard[];
   canInteract: boolean;
   cardTexture: CardTexture;
   onSelectRank: (rank: CardRank) => void;
@@ -21,11 +22,17 @@ export function PlayerHand({
   playerName,
   hand,
   selectedRank,
-  newlyDrawnCardId,
+  newlyDrawnCardIds,
+  lastPickedUpCards,
   canInteract,
   cardTexture,
   onSelectRank,
 }: PlayerHandProps) {
+  const newlyDrawnSet = useMemo(
+    () => new Set(newlyDrawnCardIds),
+    [newlyDrawnCardIds]
+  );
+
   const rankGroups = useMemo(() => {
     const groups = new Map<CardRank, StandardCard[]>();
     for (const card of hand) {
@@ -61,6 +68,33 @@ export function PlayerHand({
         </span>
       </div>
 
+      {lastPickedUpCards.length > 0 && (
+        <div className="mt-3.5 flex flex-wrap items-center justify-between gap-3 rounded-md border border-[#1E563B]/35 bg-[#EEF6F0] px-3.5 py-2.5">
+          <div>
+            <p className="font-mono text-[11px] font-semibold tracking-wider text-[#184E34] uppercase">
+              Last Picked Up from Fish Pond
+            </p>
+            <p className="mt-0.5 text-sm font-medium text-[#1E1A18]">
+              You drew:{' '}
+              <span className="font-mono font-semibold tabular-nums">
+                {lastPickedUpCards.map(formatCardLabel).join(', ')}
+              </span>
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {lastPickedUpCards.map((card) => (
+              <GameCardTile
+                key={`pickup-${card.id}`}
+                card={card}
+                size="sm"
+                texture={cardTexture}
+                isNewlyDrawn={true}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
       {hand.length === 0 ? (
         <p className="mt-4 text-sm text-[#524943]">
           You currently hold no cards in hand.
@@ -91,7 +125,7 @@ export function PlayerHand({
                       size="md"
                       texture={cardTexture}
                       selected={isRankSelected}
-                      isNewlyDrawn={card.id === newlyDrawnCardId}
+                      isNewlyDrawn={newlyDrawnSet.has(card.id)}
                       disabled={!canInteract}
                       onClick={
                         canInteract ? () => onSelectRank(rank) : undefined

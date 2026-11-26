@@ -149,6 +149,7 @@ export interface GoFishGameState {
   awaitingPassConfirmation: boolean;
   pendingTurnAdvance: boolean;
   newlyDrawnCardId: string | null;
+  lastDrawnCardsByPlayer: Record<string, StandardCard[]>;
   lastOutcome: GoFishTurnOutcome | null;
   outcomeHistory: GoFishTurnOutcome[];
   winnerIds: string[];
@@ -208,6 +209,8 @@ export interface PublicGoFishView {
   availableRanks: CardRank[];
   eligibleOpponents: PublicGoFishPlayerSummary[];
   newlyDrawnCardId: string | null;
+  newlyDrawnCardIds: string[];
+  lastPickedUpCards: StandardCard[];
   drawPileCount: number;
   totalBooksCompleted: number;
   turnNumber: number;

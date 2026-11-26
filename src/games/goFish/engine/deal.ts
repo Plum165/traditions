@@ -123,6 +123,7 @@ export function dealInitialHands(
     awaitingPassConfirmation: false,
     pendingTurnAdvance: false,
     newlyDrawnCardId: null,
+    lastDrawnCardsByPlayer: {},
     lastOutcome: null,
     outcomeHistory: [],
     winnerIds: [],
