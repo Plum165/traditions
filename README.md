@@ -16,6 +16,7 @@ A mobile-first digital cultural archive dedicated to documenting and preserving 
   - **Play Porridge (Sekaku)** (`/games/porridge/play`) — Interactive 52-card circular game supporting Play Against Bots, Pass and Play with full-screen privacy handovers, Mixed Human + Bot tables, custom turn-order/sequence layout, immediate single-tap card reveal, Same-Suit and Highest-Colour rule variations, configurable Ace ranking, and persistent in-game victory standings.
   - **Play Red or Black** (`/games/red-or-black/play`) — Interactive 2–4 player Four Questions Challenge & Card Collection House Rule game reusing shared multiplayer setup, Pass and Play privacy handovers, Mixed Human + Bot seats, Easy/Normal/Hard AI bots, distinct Questioner vs Answering Player tracking, and in-game victory standings.
   - **Play Go Fish** (`/games/go-fish/play`) — Interactive 2–4 player 52-card Go Fish reusing shared multiplayer setup, Pass and Play privacy handovers, Mixed Human + Bot seats, Easy/Normal/Hard memory-and-probability AI bots, automatic four-card book collection, empty-hand refills, stalemate detection, and in-game victory standings.
+  - **Play OMO** (`/games/omo/play`) — Interactive 2–4 player grid-based O and M word-building game reusing shared multiplayer setup, Pass and Play handovers, Mixed Human + Bot seats, viewport-adaptive grid dimensions, Easy/Normal/Hard bots with bonus-turn-aware lookahead, letter reuse, multi-OMO scoring, and in-game victory standings.
 - **Core Routes**:
   - `/` – Archive homepage and introduction
   - `/games` – Searchable, category-filtered Games Library
@@ -25,6 +26,7 @@ A mobile-first digital cultural archive dedicated to documenting and preserving 
   - `/games/porridge/play` – Playable Porridge (Sekaku) card game
   - `/games/red-or-black/play` – Playable Red or Black (The Four Questions) card game
   - `/games/go-fish/play` – Playable Go Fish card game
+  - `/games/omo/play` – Playable OMO grid word-building game
   - `/about` – Project purpose and cultural preservation principles
   - `/contribute` – How visitors can contribute games, corrections, variations, and memories
 

@@ -34,6 +34,9 @@ interface MultiplayerSetupFormProps {
   cardTexture: CardTexture;
   onChangeCardTexture: (texture: CardTexture) => void;
   showBotDifficulty?: boolean;
+  showCardTextureSelector?: boolean;
+  botDifficultyHint?: string;
+  botDifficultyDescriptions?: Record<BotDifficulty, string>;
   extraSettingsTitle?: string;
   gameOptionsSlot?: ReactNode;
   extraSettingsSlot?: ReactNode;
@@ -141,6 +144,9 @@ export function MultiplayerSetupForm({
   cardTexture,
   onChangeCardTexture,
   showBotDifficulty = false,
+  showCardTextureSelector = true,
+  botDifficultyHint,
+  botDifficultyDescriptions,
   extraSettingsTitle = 'House Rule & Experience Options',
   gameOptionsSlot,
   extraSettingsSlot,
@@ -497,8 +503,12 @@ export function MultiplayerSetupForm({
 
           {showBotDifficulty && hasBots && (
             <p className="mt-2 text-xs text-[#524943]">
-              Bot levels: <strong>Easy</strong> (random), <strong>Normal</strong>{' '}
-              (baseline deck odds), <strong>Hard</strong> (tracks revealed cards).
+              {botDifficultyHint ?? (
+                <>
+                  Bot levels: <strong>Easy</strong> (random), <strong>Normal</strong>{' '}
+                  (baseline deck odds), <strong>Hard</strong> (tracks revealed cards).
+                </>
+              )}
             </p>
           )}
 
@@ -610,7 +620,10 @@ export function MultiplayerSetupForm({
                               type="button"
                               onClick={() => handleSeatDifficultyChange(idx, level)}
                               aria-pressed={seat.difficulty === level}
-                              title={BOT_DIFFICULTY_DESCRIPTIONS[level]}
+                              title={
+                                (botDifficultyDescriptions ??
+                                  BOT_DIFFICULTY_DESCRIPTIONS)[level]
+                              }
                               className={`min-h-[44px] rounded border px-2.5 py-1 text-xs font-medium transition-colors ${
                                 seat.difficulty === level
                                   ? 'border-[#7C2D36] bg-[#7C2D36] text-[#FAF7F2]'
@@ -672,64 +685,66 @@ export function MultiplayerSetupForm({
         </div>
 
         {/* Card Texture Selector */}
-        <fieldset>
-          <legend className="text-sm font-semibold text-[#1E1A18]">Card Texture</legend>
-          <div className="mt-2.5 grid gap-3 sm:grid-cols-2">
-            <button
-              type="button"
-              onClick={() => onChangeCardTexture('classic')}
-              aria-pressed={cardTexture === 'classic'}
-              className={`flex min-h-[84px] items-center gap-3.5 rounded-md border p-3.5 text-left transition-colors ${
-                cardTexture === 'classic'
-                  ? 'border-[#7C2D36] bg-[#F4EFE7] ring-1 ring-[#7C2D36]'
-                  : 'border-[#DDD4C7] bg-[#FAF7F2] hover:bg-[#F4EFE7]/60'
-              }`}
-            >
-              <div className="shrink-0">
-                <GameCardTile
-                  card={PREVIEW_EIGHT_DIAMONDS}
-                  texture="classic"
-                  size="sm"
-                />
-              </div>
-              <div>
-                <span className="font-serif text-base font-semibold text-[#1E1A18]">
-                  Everyday Classic Cards
-                </span>
-                <span className="mt-1 block text-xs leading-relaxed text-[#524943]">
-                  White card stock with full pip counts (8♦ shows 8 diamonds) and court frames.
-                </span>
-              </div>
-            </button>
+        {showCardTextureSelector && (
+          <fieldset>
+            <legend className="text-sm font-semibold text-[#1E1A18]">Card Texture</legend>
+            <div className="mt-2.5 grid gap-3 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={() => onChangeCardTexture('classic')}
+                aria-pressed={cardTexture === 'classic'}
+                className={`flex min-h-[84px] items-center gap-3.5 rounded-md border p-3.5 text-left transition-colors ${
+                  cardTexture === 'classic'
+                    ? 'border-[#7C2D36] bg-[#F4EFE7] ring-1 ring-[#7C2D36]'
+                    : 'border-[#DDD4C7] bg-[#FAF7F2] hover:bg-[#F4EFE7]/60'
+                }`}
+              >
+                <div className="shrink-0">
+                  <GameCardTile
+                    card={PREVIEW_EIGHT_DIAMONDS}
+                    texture="classic"
+                    size="sm"
+                  />
+                </div>
+                <div>
+                  <span className="font-serif text-base font-semibold text-[#1E1A18]">
+                    Everyday Classic Cards
+                  </span>
+                  <span className="mt-1 block text-xs leading-relaxed text-[#524943]">
+                    White card stock with full pip counts (8♦ shows 8 diamonds) and court frames.
+                  </span>
+                </div>
+              </button>
 
-            <button
-              type="button"
-              onClick={() => onChangeCardTexture('archival')}
-              aria-pressed={cardTexture === 'archival'}
-              className={`flex min-h-[84px] items-center gap-3.5 rounded-md border p-3.5 text-left transition-colors ${
-                cardTexture === 'archival'
-                  ? 'border-[#7C2D36] bg-[#F4EFE7] ring-1 ring-[#7C2D36]'
-                  : 'border-[#DDD4C7] bg-[#FAF7F2] hover:bg-[#F4EFE7]/60'
-              }`}
-            >
-              <div className="shrink-0">
-                <GameCardTile
-                  card={PREVIEW_EIGHT_DIAMONDS}
-                  texture="archival"
-                  size="sm"
-                />
-              </div>
-              <div>
-                <span className="font-serif text-base font-semibold text-[#1E1A18]">
-                  Archival Minimal Cards
-                </span>
-                <span className="mt-1 block text-xs leading-relaxed text-[#524943]">
-                  Warm ivory archive stock with corner rank and centered suit symbol.
-                </span>
-              </div>
-            </button>
-          </div>
-        </fieldset>
+              <button
+                type="button"
+                onClick={() => onChangeCardTexture('archival')}
+                aria-pressed={cardTexture === 'archival'}
+                className={`flex min-h-[84px] items-center gap-3.5 rounded-md border p-3.5 text-left transition-colors ${
+                  cardTexture === 'archival'
+                    ? 'border-[#7C2D36] bg-[#F4EFE7] ring-1 ring-[#7C2D36]'
+                    : 'border-[#DDD4C7] bg-[#FAF7F2] hover:bg-[#F4EFE7]/60'
+                }`}
+              >
+                <div className="shrink-0">
+                  <GameCardTile
+                    card={PREVIEW_EIGHT_DIAMONDS}
+                    texture="archival"
+                    size="sm"
+                  />
+                </div>
+                <div>
+                  <span className="font-serif text-base font-semibold text-[#1E1A18]">
+                    Archival Minimal Cards
+                  </span>
+                  <span className="mt-1 block text-xs leading-relaxed text-[#524943]">
+                    Warm ivory archive stock with corner rank and centered suit symbol.
+                  </span>
+                </div>
+              </button>
+            </div>
+          </fieldset>
+        )}
 
         {extraSettingsSlot && (
           <div className="rounded-lg border border-[#DDD4C7] bg-[#F4EFE7]">

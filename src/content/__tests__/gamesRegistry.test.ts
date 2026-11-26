@@ -69,6 +69,7 @@ describe('Archive Games Registry', () => {
     expect(omo?.category).toBe('Board Games');
     expect(omo?.coverImage.isIllustrative).toBe(true);
     expect(omo?.sections.length).toBeGreaterThanOrEqual(6);
+    expect(omo?.interactiveExperiences?.playPath).toBe('/games/omo/play');
 
     const searchResults = searchGames('omo', 'Board Games');
     expect(searchResults.map((g) => g.slug)).toEqual(['omo']);

@@ -20,6 +20,12 @@ export const omoGame: Game = {
   },
   status: 'published',
   featured: true,
+  interactiveExperiences: {
+    playPath: '/games/omo/play',
+    playLabel: 'Play OMO',
+    rulesAnchorId: 'letters-and-placement',
+    rulesLabel: 'Read Rules',
+  },
   playerCount: '2 or more players',
   equipment: [
     'A square or rectangular grid (paper or digital board)',

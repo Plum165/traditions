@@ -7,7 +7,7 @@
 The architecture follows three core engineering principles:
 
 1. **Separation of Content and Presentation**: Game rules, variations, and cultural notes live in strongly typed structured data modules (`src/content/games/`), completely decoupled from React UI components.
-2. **Separation of Game Engine and UI**: Interactive gameplay logic (`src/games/sevens/engine/`, `src/games/porridge/engine/`, `src/games/redOrBlack/engine/`, `src/games/goFish/engine/`) is written as pure, immutable, deterministic TypeScript modules independent of React components and covered by automated unit tests (`vitest`).
+2. **Separation of Game Engine and UI**: Interactive gameplay logic (`src/games/sevens/engine/`, `src/games/porridge/engine/`, `src/games/redOrBlack/engine/`, `src/games/goFish/engine/`, `src/games/omo/engine/`) is written as pure, immutable, deterministic TypeScript modules independent of React components and covered by automated unit tests (`vitest`).
 3. **Template-Driven Scalability & CMS Readiness**: Every game entry renders dynamically through `GameDetailsTemplate`, and data access is abstracted behind `GameRepository` (`src/types/game.ts`).
 
 ---
@@ -18,11 +18,11 @@ The architecture follows three core engineering principles:
 | :--- | :--- | :--- |
 | Framework | React 19 + TypeScript | Component architecture and static type safety |
 | Build Tool | Vite 8 | Fast bundling and route-based code splitting |
-| Routing | React Router DOM 7 | Client-side navigation (`/`, `/games`, `/games/:slug`, `/games/sevens/learn`, `/games/sevens/play`, `/games/porridge/play`, `/games/red-or-black/play`, `/games/go-fish/play`, `/about`, `/contribute`) |
+| Routing | React Router DOM 7 | Client-side navigation (`/`, `/games`, `/games/:slug`, `/games/sevens/learn`, `/games/sevens/play`, `/games/porridge/play`, `/games/red-or-black/play`, `/games/go-fish/play`, `/games/omo/play`, `/about`, `/contribute`) |
 | Styling | Tailwind CSS v4 | Mobile-first responsive styling and archival design tokens |
 | Icons | Lucide React | Accessible affordance icons |
 | Animation | Motion (`motion/react`) | Subtle compositor-only transitions respecting `prefers-reduced-motion` |
-| Testing | Vitest 5 | Automated unit tests for Sevens engine, Porridge engine, Red or Black engine, Go Fish engine, and archive registry |
+| Testing | Vitest 5 | Automated unit tests for Sevens, Porridge, Red or Black, Go Fish, OMO engines, and archive registry |
 | Hosting | Vercel (compatible) | Static SPA deployment with `vercel.json` fallback rewrites |
 
 ---
@@ -69,6 +69,10 @@ The architecture follows three core engineering principles:
 │   │   │   ├── README.md          # Go Fish engine, book collection, bot memory & strategy docs
 │   │   │   ├── components/        # GoFishSetupPanel, GoFishPassDeviceScreen, GoFishVictory, FishPond, PlayerStatus, PlayerHand, OpponentSelector, RankSelector, RequestConfirmation, GameNotification, BookCollection, GoFishTable
 │   │   │   └── engine/            # Pure 52-card deck, deal, hand/book/draw managers, requestValidator/Resolver, botMemory, Easy/Normal/Hard botStrategy, turnManager, scoring, and Vitest suite
+│   │   ├── omo/
+│   │   │   ├── README.md          # OMO engine, grid limits, detector, bonus turns & bot strategy docs
+│   │   │   ├── components/        # OmoSetupPanel, OmoPassDeviceScreen, OmoVictoryPanel, OmoScoreboard, OmoBoard, OmoTable
+│   │   │   └── engine/            # Pure gridManager, omoDetector, scoring, turnManager, Easy/Normal/Hard botStrategy, gameEngine, and Vitest suite
 │   │   ├── porridge/
 │   │   │   ├── README.md          # Porridge engine, circle rules & configurable options docs
 │   │   │   ├── components/        # PorridgeCircle, CircleCard, CentralPorridgePile, PlayerStatus, PorridgePassDeviceScreen, PorridgeVictory, PorridgeSetupPanel, PorridgeTable
@@ -90,6 +94,7 @@ The architecture follows three core engineering principles:
 │   │   ├── GoFishPlayPage.tsx
 │   │   ├── HomePage.tsx
 │   │   ├── NotFoundPage.tsx
+│   │   ├── OmoPlayPage.tsx
 │   │   ├── PorridgePlayPage.tsx
 │   │   ├── RedOrBlackPlayPage.tsx
 │   │   ├── SevensPlayPage.tsx
@@ -139,6 +144,11 @@ The architecture follows three core engineering principles:
 - **Shared Multiplayer & Private Hands (`getPublicGoFishView`, `GoFishPassDeviceScreen`)**: Reuses `MultiplayerSetupForm`, `SharedPassDeviceScreen`, `SharedVictoryPanel`, and `GameCardTile`. Private hands and non-matching drawn cards remain hidden during Pass-and-Play handovers and multi-human bot turns.
 - **Book Collection, Refills & Stalemate (`bookManager.ts`, `drawManager.ts`, `scoring.ts`)**: Automatically extracts 4-of-a-kind books on initial deal, transfers, pond draws, and refills; refills empty hands up to 5 cards (or remaining pond, or 1-card house rule); marks empty-hand players inactive for asking when the Fish Pond is empty; and resolves 13-book victories, ties, and empty-pond round stalemates.
 - **Public Memory & Fair Bot Intelligence (`botMemory.ts`, `botStrategy.ts`)**: `createBotObservation` omits opponent hands and `drawPile`. Easy bots pick randomly from legal options; Normal bots track public request/denial memory and prefer multi-card ranks; Hard bots combine public rank conservation, evidence decay/invalidation, book-completion urgency, and opponent hand sizes.
+
+### OMO (`src/games/omo/`)
+- **Shared Multiplayer & Responsive Grid (`OmoSetupPanel`, `OmoPassDeviceScreen`, `OmoVictoryPanel`)**: Reuses `MultiplayerSetupForm` (with `showCardTextureSelector={false}`), `SharedPassDeviceScreen`, and `SharedVictoryPanel`. `getResponsiveGridLimits` computes device-appropriate max rows/columns from both viewport width and usable height.
+- **4-Axis OMO Detection & Letter Reuse (`omoDetector.ts`, `gameEngine.ts`)**: `detectNewOmosAtPlacement` scans only the four straight-line axes passing through the newly placed cell, assigns canonical coordinate-pair IDs (`row1,col1-row3,col3`) to prevent duplicate scoring, preserves letters on the grid for reuse, grants a single bonus turn per scoring placement (unless the final cell fills the board), and resolves ties without inventing tie-breakers.
+- **Difficulty-Scaled Bot Intelligence (`botStrategy.ts`)**: Easy bots combine 70% random legal moves with 30% immediate OMO grabs; Normal bots evaluate immediate/multi-OMO scores, threat blocking, and 1-move threat avoidance; Hard bots run depth-adaptive minimax lookahead with alpha-beta pruning and bonus-turn chain simulation.
 
 ---
 
