@@ -57,6 +57,7 @@ The architecture follows three core engineering principles:
 │   │   └── games/
 │   │       ├── index.ts           # Central game registry & query helpers
 │   │       ├── porridge.ts        # Porridge (Sekaku) documentation
+│   │       ├── redOrBlack.ts      # Red or Black (The Four Questions) documentation
 │   │       └── sevens.ts          # Sevens baseline documentation
 │   ├── games/
 │   │   ├── porridge/

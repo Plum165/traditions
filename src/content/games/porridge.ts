@@ -270,7 +270,7 @@ export const porridgeGame: Game = {
       verification: 'community-recollection',
     },
   ],
-  relatedGames: ['sevens'],
+  relatedGames: ['sevens', 'red-or-black'],
   lastUpdated: '2026-11-25',
   seo: {
     title: 'Porridge (Sekaku) Card Game Rules & Variations – Our Childhood Archive',

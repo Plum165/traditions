@@ -295,7 +295,11 @@ describe('Porridge (Sekaku) Game Engine', () => {
             { type: 'bot', name: 'Bot 1' },
             { type: 'human', name: 'Player 2' },
           ],
-        })
+          rules: {
+            collectorStartsNextPile: false,
+          },
+        }),
+        () => 0.42
       );
 
       // Bot cannot act during human turn

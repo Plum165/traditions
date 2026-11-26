@@ -96,10 +96,14 @@ export function AboutPage() {
               with transparent, thoroughly structured entries—including{' '}
               <Link to="/games/sevens" className="font-medium text-[#7C2D36] underline underline-offset-4">
                 Sevens
-              </Link>{' '}
-              and{' '}
+              </Link>
+              ,{' '}
               <Link to="/games/porridge" className="font-medium text-[#7C2D36] underline underline-offset-4">
                 Porridge (Sekaku)
+              </Link>
+              , and{' '}
+              <Link to="/games/red-or-black" className="font-medium text-[#7C2D36] underline underline-offset-4">
+                Red or Black
               </Link>
               . Every addition uses a shared template supporting card games, street games,
               playground games, and group traditions.

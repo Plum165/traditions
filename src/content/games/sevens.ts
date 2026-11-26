@@ -273,7 +273,7 @@ export const sevensGame: Game = {
       verification: 'documented-version',
     },
   ],
-  relatedGames: ['porridge'],
+  relatedGames: ['porridge', 'red-or-black'],
   lastUpdated: '2026-11-25',
   seo: {
     title: 'Sevens Card Game Rules & Variations – Our Childhood Archive',

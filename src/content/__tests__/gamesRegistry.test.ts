@@ -7,9 +7,9 @@ import {
 } from '../games';
 
 describe('Archive Games Registry', () => {
-  it('publishes both Sevens (OC-001) and Porridge / Sekaku (OC-002)', () => {
-    expect(PUBLISHED_GAMES.map((g) => g.slug)).toEqual(['sevens', 'porridge']);
-    expect(getActiveCategories()).toEqual([{ category: 'Card Games', count: 2 }]);
+  it('publishes Sevens (OC-001), Porridge / Sekaku (OC-002), and Red or Black (OC-003)', () => {
+    expect(PUBLISHED_GAMES.map((g) => g.slug)).toEqual(['sevens', 'porridge', 'red-or-black']);
+    expect(getActiveCategories()).toEqual([{ category: 'Card Games', count: 3 }]);
   });
 
   it('resolves Porridge (Sekaku) by slug and alias search', () => {
@@ -24,6 +24,20 @@ describe('Archive Games Registry', () => {
 
     const aliasResults = searchGames('sekaku', 'Card Games');
     expect(aliasResults.map((g) => g.slug)).toEqual(['porridge']);
+  });
+
+  it('resolves Red or Black (The Four Questions) by slug and alias search', () => {
+    const redOrBlack = getGameBySlug('red-or-black');
+    expect(redOrBlack).toBeDefined();
+    expect(redOrBlack?.accessionCode).toBe('OC-003');
+    expect(redOrBlack?.alternativeNames).toContain('The Four Questions');
+    expect(redOrBlack?.unconfirmedQuestions).toHaveLength(7);
+    expect(redOrBlack?.variations).toHaveLength(2);
+    expect(redOrBlack?.coverImage.isIllustrative).toBe(true);
+    expect(redOrBlack?.interactiveExperiences).toBeUndefined();
+
+    const aliasResults = searchGames('the four questions', 'Card Games');
+    expect(aliasResults.map((g) => g.slug)).toEqual(['red-or-black']);
   });
 
   it('ensures every published game has required archival metadata', () => {

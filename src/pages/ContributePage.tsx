@@ -23,7 +23,7 @@ const WAYS_TO_CONTRIBUTE = [
   {
     title: '02. Suggest Corrections',
     description:
-      'Spot something unclear or incomplete in a published entry—or help answer open confirmation questions on entries like Sevens or Porridge (Sekaku).',
+      'Spot something unclear or incomplete in a published entry—or help answer open confirmation questions on entries like Sevens, Porridge (Sekaku), or Red or Black.',
   },
   {
     title: '03. Share Alternative House Rules',
@@ -130,13 +130,20 @@ export function ContributePage() {
                 className="font-medium text-[#7C2D36] underline underline-offset-4"
               >
                 Sevens
-              </Link>{' '}
-              or{' '}
+              </Link>
+              ,{' '}
               <Link
                 to="/games/porridge#rules-requiring-confirmation"
                 className="font-medium text-[#7C2D36] underline underline-offset-4"
               >
                 Porridge (Sekaku)
+              </Link>
+              , or{' '}
+              <Link
+                to="/games/red-or-black#rules-requiring-confirmation"
+                className="font-medium text-[#7C2D36] underline underline-offset-4"
+              >
+                Red or Black
               </Link>{' '}
               to help verify community rules.
             </p>

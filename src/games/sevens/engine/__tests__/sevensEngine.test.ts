@@ -372,12 +372,17 @@ describe('Pass and Play Privacy & Game Reset', () => {
 
 describe('Bot Strategy Priorities and Constraints', () => {
   it('prioritises matching sets over consecutive runs and never creates more than one new set per turn', () => {
-    const base = createGame({ playerCount: 2, handSize: 7, mode: 'vs-bots' });
+    const base = createGame(
+      { playerCount: 2, handSize: 7, mode: 'vs-bots' },
+      createDeterministicRng(42)
+    );
     const botTurnState: GameState = {
       ...base,
       currentPlayerIndex: 1,
       phase: 'PLAY',
       awaitingPassConfirmation: false,
+      drawPile: [std(2, 'hearts'), std(9, 'clubs')],
+      discardPile: [std(10, 'hearts')],
       players: [
         base.players[0],
         {

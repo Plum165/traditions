@@ -7,6 +7,7 @@ A mobile-first digital cultural archive dedicated to documenting and preserving 
 - **Published Games**:
   - **Sevens** (`/games/sevens`, `OC-001`) — Documenting the 54-card deck (52 cards + 2 Jokers), 7-card and 11-card starting hand variations, matching sets, consecutive runs, Joker replacement rules, and open questions requiring community confirmation.
   - **Porridge / Sekaku** (`/games/porridge`, `OC-002`) — Documenting the South African face-down circle card game with Same-Suit Porridge and Highest-Colour house-rule variations, side-by-side rules comparison, and open community questions.
+  - **Red or Black / The Four Questions** (`/games/red-or-black`, `OC-003`) — Documenting the four-question card-guessing game (Colour, Higher or Lower, Inside or Outside, Suit) with Four Questions Challenge and House Rule – Card Collection variations, worked card examples, and open community questions.
 - **Interactive Experiences**:
   - **Learn to Play Sevens** (`/games/sevens/learn`) — 7-lesson interactive tutorial with card examples, instant quiz feedback, and live set-validation practice.
   - **Play Sevens** (`/games/sevens/play`) — Mobile-first playable 2–4 player Sevens supporting Draw Pile or top Discard Pile drawing, differentiated shading for newly drawn cards, selectable **Everyday Classic** (multi-pip) or **Archival Minimal** card textures, live bot move telegraphing, 7-card and 11-card hands, Pass and Play with optional bot opponents and turn-privacy screens, deterministic bots, persistent on-table victory standings, post-game step-by-step match replay revealing bots' cards, and configurable unresolved house rules.
@@ -14,7 +15,7 @@ A mobile-first digital cultural archive dedicated to documenting and preserving 
 - **Core Routes**:
   - `/` – Archive homepage and introduction
   - `/games` – Searchable, category-filtered Games Library
-  - `/games/:slug` – Reusable game documentation template (`/games/sevens`, `/games/porridge`)
+  - `/games/:slug` – Reusable game documentation template (`/games/sevens`, `/games/porridge`, `/games/red-or-black`)
   - `/games/sevens/learn` – Interactive Sevens tutorial
   - `/games/sevens/play` – Playable Sevens card game
   - `/games/porridge/play` – Playable Porridge (Sekaku) card game

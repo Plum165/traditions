@@ -1,12 +1,13 @@
 import type { Game, GameCategory, GameRepository } from '../../types/game';
 import { porridgeGame } from './porridge';
+import { redOrBlackGame } from './redOrBlack';
 import { sevensGame } from './sevens';
 
 /**
  * Central registry of documented games.
  * Adding a new game requires creating its content file and registering it here.
  */
-export const ALL_GAMES: Game[] = [sevensGame, porridgeGame];
+export const ALL_GAMES: Game[] = [sevensGame, porridgeGame, redOrBlackGame];
 
 export const PUBLISHED_GAMES: Game[] = ALL_GAMES.filter(
   (game) => game.status === 'published'
