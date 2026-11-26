@@ -34,7 +34,7 @@ describe('Archive Games Registry', () => {
     expect(redOrBlack?.unconfirmedQuestions).toHaveLength(7);
     expect(redOrBlack?.variations).toHaveLength(2);
     expect(redOrBlack?.coverImage.isIllustrative).toBe(true);
-    expect(redOrBlack?.interactiveExperiences).toBeUndefined();
+    expect(redOrBlack?.interactiveExperiences?.playPath).toBe('/games/red-or-black/play');
 
     const aliasResults = searchGames('the four questions', 'Card Games');
     expect(aliasResults.map((g) => g.slug)).toEqual(['red-or-black']);

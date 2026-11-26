@@ -296,6 +296,12 @@ export const redOrBlackGame: Game = {
     },
   ],
   relatedGames: ['sevens', 'porridge'],
+  interactiveExperiences: {
+    playPath: '/games/red-or-black/play',
+    playLabel: 'Play Red or Black',
+    rulesAnchorId: 'the-four-questions',
+    rulesLabel: 'Read Full Rules',
+  },
   lastUpdated: '2026-11-25',
   seo: {
     title: 'Red or Black (The Four Questions) Rules & Variations – Our Childhood Archive',

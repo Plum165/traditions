@@ -27,6 +27,11 @@ const PorridgePlayPage = lazy(() =>
     default: mod.PorridgePlayPage,
   }))
 );
+const RedOrBlackPlayPage = lazy(() =>
+  import('./pages/RedOrBlackPlayPage').then((mod) => ({
+    default: mod.RedOrBlackPlayPage,
+  }))
+);
 const AboutPage = lazy(() =>
   import('./pages/AboutPage').then((mod) => ({ default: mod.AboutPage }))
 );
@@ -57,6 +62,7 @@ export default function App() {
               <Route path="/games/sevens/learn" element={<SevensTutorialPage />} />
               <Route path="/games/sevens/play" element={<SevensPlayPage />} />
               <Route path="/games/porridge/play" element={<PorridgePlayPage />} />
+              <Route path="/games/red-or-black/play" element={<RedOrBlackPlayPage />} />
               <Route path="/games/:slug" element={<GamePage />} />
               <Route path="/about" element={<AboutPage />} />
               <Route path="/contribute" element={<ContributePage />} />

@@ -7,7 +7,7 @@
 The architecture follows three core engineering principles:
 
 1. **Separation of Content and Presentation**: Game rules, variations, and cultural notes live in strongly typed structured data modules (`src/content/games/`), completely decoupled from React UI components.
-2. **Separation of Game Engine and UI**: Interactive gameplay logic (`src/games/sevens/engine/`, `src/games/porridge/engine/`) is written as pure, immutable, deterministic TypeScript modules independent of React components and covered by automated unit tests (`vitest`).
+2. **Separation of Game Engine and UI**: Interactive gameplay logic (`src/games/sevens/engine/`, `src/games/porridge/engine/`, `src/games/redOrBlack/engine/`) is written as pure, immutable, deterministic TypeScript modules independent of React components and covered by automated unit tests (`vitest`).
 3. **Template-Driven Scalability & CMS Readiness**: Every game entry renders dynamically through `GameDetailsTemplate`, and data access is abstracted behind `GameRepository` (`src/types/game.ts`).
 
 ---
@@ -18,11 +18,11 @@ The architecture follows three core engineering principles:
 | :--- | :--- | :--- |
 | Framework | React 19 + TypeScript | Component architecture and static type safety |
 | Build Tool | Vite 8 | Fast bundling and route-based code splitting |
-| Routing | React Router DOM 7 | Client-side navigation (`/`, `/games`, `/games/:slug`, `/games/sevens/learn`, `/games/sevens/play`, `/games/porridge/play`, `/about`, `/contribute`) |
+| Routing | React Router DOM 7 | Client-side navigation (`/`, `/games`, `/games/:slug`, `/games/sevens/learn`, `/games/sevens/play`, `/games/porridge/play`, `/games/red-or-black/play`, `/about`, `/contribute`) |
 | Styling | Tailwind CSS v4 | Mobile-first responsive styling and archival design tokens |
 | Icons | Lucide React | Accessible affordance icons |
 | Animation | Motion (`motion/react`) | Subtle compositor-only transitions respecting `prefers-reduced-motion` |
-| Testing | Vitest 5 | Automated unit tests for Sevens engine, Porridge engine, and archive registry |
+| Testing | Vitest 5 | Automated unit tests for Sevens engine, Porridge engine, Red or Black engine, and archive registry |
 | Hosting | Vercel (compatible) | Static SPA deployment with `vercel.json` fallback rewrites |
 
 ---
@@ -41,7 +41,10 @@ The architecture follows three core engineering principles:
 │   │   │   ├── ContentBlockRenderer.tsx
 │   │   │   ├── GameCard.tsx
 │   │   │   ├── GameCardTile.tsx   # Shared archival & multi-pip classic playing card component
-│   │   │   └── GameDetailsTemplate.tsx
+│   │   │   ├── GameDetailsTemplate.tsx
+│   │   │   ├── MultiplayerSetupForm.tsx   # Shared 2-4 player human/bot setup & validation
+│   │   │   ├── SharedPassDeviceScreen.tsx # Shared Pass-and-Play privacy handover screen
+│   │   │   └── SharedVictoryPanel.tsx     # Shared in-game victory standings & board toggle
 │   │   ├── layout/
 │   │   │   ├── Layout.tsx
 │   │   │   ├── SiteFooter.tsx
@@ -64,6 +67,10 @@ The architecture follows three core engineering principles:
 │   │   │   ├── README.md          # Porridge engine, circle rules & configurable options docs
 │   │   │   ├── components/        # PorridgeCircle, CircleCard, CentralPorridgePile, PlayerStatus, PorridgePassDeviceScreen, PorridgeVictory, PorridgeSetupPanel, PorridgeTable
 │   │   │   └── engine/            # Pure 52-card deck, circle, Same-Suit/Highest-Colour rules, botStrategy, scoring, gameEngine, and Vitest suite
+│   │   ├── redOrBlack/
+│   │   │   ├── README.md          # Red or Black engine, bots & variant turn-manager docs
+│   │   │   ├── components/        # RedOrBlackSetupPanel, RedOrBlackPassDeviceScreen, RedOrBlackVictory, RedOrBlackTable
+│   │   │   └── engine/            # Pure 52-card deck, shared validation, Easy/Normal/Hard botStrategy, turnManager, gameEngine, and Vitest suite
 │   │   └── sevens/
 │   │       ├── README.md          # Sevens engine & configurable rules docs
 │   │       ├── components/        # SevensSetupPanel, PassDeviceScreen, SevensTable, SevensReplayViewer (plus GameCardTile re-export)
@@ -77,12 +84,16 @@ The architecture follows three core engineering principles:
 │   │   ├── HomePage.tsx
 │   │   ├── NotFoundPage.tsx
 │   │   ├── PorridgePlayPage.tsx
+│   │   ├── RedOrBlackPlayPage.tsx
 │   │   ├── SevensPlayPage.tsx
 │   │   └── SevensTutorialPage.tsx
 │   ├── types/
 │   │   ├── contribution.ts        # Future community submission & moderation types
 │   │   ├── game.ts                # Core Game & ContentBlock schema
+│   │   ├── multiplayer.ts         # Shared 2-4 player seat config, bot difficulty & validation
 │   │   └── playingCard.ts         # Shared StandardCard, JokerCard, Suit & formatting helpers
+│   ├── utils/
+│   │   └── gameAudio.ts           # Optional Web Audio API feedback tones
 │   ├── App.tsx                    # Route configuration + lazy code splitting
 │   ├── index.css                  # Tailwind v4 tokens & accessibility defaults
 │   └── main.tsx                   # React root mount
@@ -111,6 +122,11 @@ The architecture follows three core engineering principles:
 - **Custom Turn Sequence & Mixed Modes (`PorridgeSetupPanel`)**: Supports Play Against Bots (with selectable 1st–4th human turn slot), Pass and Play, and Mixed Human + Bot tables (2–4 players) with seat reordering and Clockwise / Anticlockwise play direction.
 - **Privacy & Random Bot Selection (`botStrategy.ts`, `getPublicPorridgeView`)**: Hidden face-down card identities are stripped from `PublicCircleSlot` projections, bots pick uniformly at random from remaining `face-down` positions without peeking, and `PorridgePassDeviceScreen` hides the entire board and selection state until the next human taps **Ready**.
 - **Lowest-Count Victory & Ties (`scoring.ts`, `PorridgeVictory`)**: Awards victory to the player(s) with the fewest collected cards, detects ties without inventing tie-breakers, locks post-game mutations, and keeps the completed board inspectable on-screen.
+
+### Red or Black – The Four Questions (`src/games/redOrBlack/`)
+- **Shared Multiplayer Setup & Privacy (`MultiplayerSetupForm`, `SharedPassDeviceScreen`, `SharedVictoryPanel`)**: Reuses the shared 2–4 player setup component (`vs-bots`, `pass-and-play`, `mixed`), seat validation (`validateMultiplayerSeats`), full-screen Pass-and-Play privacy handover screen, and in-game victory standings panel alongside Porridge.
+- **Variants & Dual-Role Turn Rotation (`turnManager.ts`, `gameEngine.ts`)**: Maintains distinct `askerIndex` (Questioner / Deck Holder) and `answererIndex` (Answering Player) IDs across 2, 3, and 4 players in Clockwise or Anticlockwise direction for both **Four Questions Challenge** and **Card Collection House Rule**.
+- **Shared Validation & Fair AI Difficulties (`validation.ts`, `botStrategy.ts`)**: Both humans and bots evaluate guesses through `evaluatePrediction`. Bots (`easy` random, `normal` baseline probability, `hard` remaining-deck card counting) operate strictly on public revealed-card history without ever accessing `drawPile`.
 
 ---
 
